@@ -58,6 +58,14 @@ void Options::load() {
     } catch( CryptoPP::Exception& e ) {
         exit(1);
     }
+
+    fromString(m_decryptionPlace, s.value("DecryptionPlace", "").toString().toStdString());
+    std::string decryptionFolder = s.value("DecryptionFolder", "").toString().toStdString();
+    try {
+        m_decryptionFolder = decryptString(decryptionFolder);
+    } catch( CryptoPP::Exception& e ) {
+        exit(1);
+    }
 }
 
 std::string Options::encryptString(const std::string& src) {
@@ -121,6 +129,15 @@ void Options::save() {
     }
     s.setValue("WipeProgram", wipeProgramEncrypted.c_str());
 
+    s.setValue("DecryptionPlace", toString(m_decryptionPlace).c_str());
+    std::string decryptionFolderEncrypted;
+    try {
+        decryptionFolderEncrypted = encryptString(m_decryptionFolder);
+    } catch( CryptoPP::Exception& e ) {
+        //cerr << e.what() << endl;
+        exit(1);
+    }
+    s.setValue("DecryptionFolder", decryptionFolderEncrypted.c_str());
 }
 
 Options::KeyStorage Options::keyStorage() const {
@@ -129,12 +146,18 @@ Options::KeyStorage Options::keyStorage() const {
 Options::WipeMethod Options::wipeMethod() const {
     return m_wipeMethod;
 }
+Options::DecryptionPlace Options::decryptionPlace() const {
+    return m_decryptionPlace;
+}
 
 std::string Options::keyFile() const {
     return m_keyFile;
 }
 std::string Options::wipeProgram() const {
     return m_wipeProgram;
+}
+std::string Options::decryptionFolder() const {
+    return m_decryptionFolder;
 }
 
 void Options::setKeyStorage(KeyStorage k) {
@@ -153,10 +176,23 @@ void Options::setWipeProgram(const std::string& p) {
     m_wipeProgram = p;
 }
 
+void Options::setDecryptionPlace(DecryptionPlace d) {
+    m_decryptionPlace = d;
+}
+
+void Options::setDecryptionFolder(const std::string &f) {
+    m_decryptionFolder = f;
+}
+
+
+
 bool Options::validate() const {
     const KeyStorage k = keyStorage();
     const WipeMethod w = wipeMethod();
+    const DecryptionPlace d = decryptionPlace();
     return (
         (k == KeyStorage::Keyboard || (k == KeyStorage::File && keyFile().size() != 0))
-        && (w == WipeMethod::Regular || (w == WipeMethod::External && wipeProgram().size() != 0)));
+        && (w == WipeMethod::Regular || (w == WipeMethod::External && wipeProgram().size() != 0))
+        && (d == DecryptionPlace::Inplace || (d == DecryptionPlace::Specified && decryptionFolder().size() != 0))
+                );
 }

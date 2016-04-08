@@ -16,6 +16,7 @@ OptionsDialog::OptionsDialog(Options& options) :
     ui->setupUi(this);
     connect(ui->rbFile, &QRadioButton::toggled, this, [=](bool toggled){ui->frameKeyFile->setEnabled(toggled);});
     connect(ui->rbExt, &QRadioButton::toggled, this, [=](bool toggled){ui->frameWipeProgram->setEnabled(toggled);});
+    connect(ui->rbFolder, &QRadioButton::toggled, this, [=](bool toggled){ui->frameDecryptFolder->setEnabled(toggled);});
 
     connect(ui->bnCancel, &QPushButton::clicked, this, [=](){close();});
     connect(ui->bnOk, &QPushButton::clicked, this, &OptionsDialog::onOkClick);
@@ -36,8 +37,14 @@ void OptionsDialog::update() {
     ui->rbExt->setChecked(w == Options::WipeMethod::External);
     ui->rbExt->toggle();
 
+    Options::DecryptionPlace d = options.decryptionPlace();
+    ui->rbSame->setChecked(d == Options::DecryptionPlace::Inplace);
+    ui->rbFolder->setChecked(d == Options::DecryptionPlace::Specified);
+    ui->rbFolder->toggle();
+
     ui->leKeyFile->setText(options.keyFile().c_str());
     ui->leWipeProgram->setText(options.wipeProgram().c_str());
+    ui->leDecryptFolder->setText(options.decryptionFolder().c_str());
 }
 
 OptionsDialog::~OptionsDialog()
@@ -46,18 +53,20 @@ OptionsDialog::~OptionsDialog()
 }
 
 void OptionsDialog::onOkClick() {
-    if (options.validate()) {
+    /*if (options.validate()) */{
         options.setKeyStorage(ui->rbKbd->isChecked() ? Options::KeyStorage::Keyboard : Options::KeyStorage::File);
         options.setKeyFile(ui->leKeyFile->text().toStdString());
         options.setWipeMethod(ui->rbNone->isChecked() ? Options::WipeMethod::Regular : Options::WipeMethod::External);
         options.setWipeProgram(ui->leWipeProgram->text().toStdString());
+        options.setDecryptionPlace(ui->rbSame->isChecked() ? Options::DecryptionPlace::Inplace : Options::DecryptionPlace::Specified);
+        options.setDecryptionFolder(ui->leDecryptFolder->text().toStdString());
         options.save();
         close();
-    } else {
+    }/* else {
         QMessageBox m;
         m.setIcon(QMessageBox::Warning);
         m.setText("Options are not complete");
         m.setWindowTitle("Validate result");
         m.exec();
-    }
+    }*/
 }

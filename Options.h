@@ -24,6 +24,12 @@ public:
     } m_wipeMethod;
     std::string m_wipeProgram;
 
+    enum class DecryptionPlace {
+        Inplace,
+        Specified
+    } m_decryptionPlace;
+    std::string m_decryptionFolder;
+
     static std::string toString(KeyStorage k) {
         std::string res;
         switch (k) {
@@ -79,6 +85,34 @@ public:
 
         return res;
     }
+    static std::string toString(DecryptionPlace d) {
+        std::string res;
+        switch (d) {
+        case DecryptionPlace::Inplace:
+            res = "inplace";
+            break;
+        case DecryptionPlace::Specified:
+            res = "specified";
+            break;
+        default:
+            throw("Not all DecryptionPlace values covered");
+            break;
+        }
+
+        return res;
+    }
+    static bool fromString(DecryptionPlace& d, const std::string& s) {
+        bool res = false;
+        if (s == "inplace") {
+            d = DecryptionPlace::Inplace;
+            res = true;
+        } else if (s == "specified") {
+            d = DecryptionPlace::Specified;
+            res = true;
+        }
+
+        return res;
+    }
 
     Options();
     void save();
@@ -89,11 +123,15 @@ public:
     void setKeyFile(const std::string& f);
     void setWipeMethod(WipeMethod w);
     void setWipeProgram(const std::string& p);
+    void setDecryptionPlace(DecryptionPlace p);
+    void setDecryptionFolder(const std::string& f);
 
     KeyStorage keyStorage() const;
     std::string keyFile() const;
     WipeMethod wipeMethod() const;
     std::string wipeProgram() const;
+    DecryptionPlace decryptionPlace() const;
+    std::string decryptionFolder() const;
 };
 
 #endif // OPTIONS_H

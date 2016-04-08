@@ -8,7 +8,7 @@
 #include "OptionsDialog.h"
 #include <QFileSystemModel>
 #include "WaitDialog.h"
-
+#include <QMenu>
 namespace Ui {
     class MainWindow;
 }
@@ -30,6 +30,8 @@ private:
     void onDecryptSelected();
     void onWipeSelected();
     void onOptionsClick();
+    void onCustomContextMenu(const QPoint& point);
+    QMenu contextMenu;
 
     void updateKeys();
 
@@ -40,7 +42,7 @@ private:
     };
 
     void processOperation(Operation operation);
-    int processItem(const std::string& name, void (MainWindow::*procFunc)(const std::string&));
+    int processItems(const std::vector<std::string>& names, void (MainWindow::*procFunc)(const std::string&));
     inline QFileSystemModel* model();
 
     CryptoPP::SecByteBlock key;
