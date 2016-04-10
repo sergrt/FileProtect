@@ -17,16 +17,19 @@ SOURCES += main.cpp\
         MainWindow.cpp \
     OptionsDialog.cpp \
     Options.cpp \
-    WaitDialog.cpp
+    WaitDialog.cpp \
+    FilesSyncDialog.cpp
 
 HEADERS  += MainWindow.h \
     OptionsDialog.h \
     Options.h \
-    WaitDialog.h
+    WaitDialog.h \
+    FilesSyncDialog.h
 
 FORMS    += MainWindow.ui \
     OptionsDialog.ui \
-    WaitDialog.ui
+    WaitDialog.ui \
+    FilesSyncDialog.ui
 
 
 LIBS += -L$$PWD/../cryptopp/ -lcryptopp

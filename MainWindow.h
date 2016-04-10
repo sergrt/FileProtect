@@ -9,6 +9,8 @@
 #include <QFileSystemModel>
 #include "WaitDialog.h"
 #include <QMenu>
+#include "FilesSyncDialog.h"
+
 namespace Ui {
     class MainWindow;
 }
@@ -55,6 +57,10 @@ private:
     Options options;
     OptionsDialog optionsDlg;
     WaitDialog waitDlg;
+    FilesSyncDialog syncDlg;
+
+    std::vector<FileOperation> fileOperations;
+    void closeEvent(QCloseEvent* event);
 };
 
 #endif // MAINWINDOW_H

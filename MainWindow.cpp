@@ -9,6 +9,8 @@
 #include <QMessageBox>
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 #include <QProcess>
+#include <QDateTime>
+#include <algorithm>
 
 CryptoPP::SecByteBlock HexDecodeString(const std::string& hexStr) {
     CryptoPP::StringSource ss(hexStr, true, new CryptoPP::HexDecoder);
@@ -174,10 +176,17 @@ void MainWindow::doDecrypt(const std::string& infile) {
         QFileInfo fileInfo(infile.c_str());
         QString filename(fileInfo.fileName());
         outfile = options.decryptionFolder() + filename.toStdString() + ".11";
+    } else {
+        outfile = infile + ".dec";
     }
-    infile + ".dec";
     CryptoPP::FileSource(infile.c_str(), true, new CryptoPP::StreamTransformationFilter(aes, new CryptoPP::FileSink(outfile.c_str())));
-
+    //
+    QFile infl(infile.c_str());
+    const unsigned long sz = infl.size();
+    QFileInfo ff(infl);
+    time_t timestamp = ff.lastModified().toTime_t();
+    fileOperations.emplace_back(FileOperation(infile, outfile, sz, timestamp));
+    //
     doRemove(infile);
     QFile f(outfile.c_str());
     f.rename(infile.c_str());
@@ -269,4 +278,13 @@ MainWindow::~MainWindow() {
 
 void MainWindow::onOptionsClick() {
     optionsDlg.show();
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (!fileOperations.empty()) {
+        for (const auto& op : fileOperations)
+            syncDlg.push_back(op);
+
+        syncDlg.show();
+    }
 }

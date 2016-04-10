@@ -26,21 +26,22 @@ OptionsDialog::OptionsDialog(Options& options) :
     //ui->frameKeyFile->setEnabled(ui->rbFile->isChecked());
     //ui->frameWipeProgram->setEnabled(ui->rbExt->isChecked());
 }
+
 void OptionsDialog::update() {
     Options::KeyStorage k = options.keyStorage();
     ui->rbKbd->setChecked(k == Options::KeyStorage::Keyboard);
     ui->rbFile->setChecked(k == Options::KeyStorage::File);
-    ui->rbFile->toggle();
+    ui->frameKeyFile->setEnabled(k == Options::KeyStorage::File);
 
     Options::WipeMethod w = options.wipeMethod();
     ui->rbNone->setChecked(w == Options::WipeMethod::Regular);
     ui->rbExt->setChecked(w == Options::WipeMethod::External);
-    ui->rbExt->toggle();
+    ui->frameWipeProgram->setEnabled(w == Options::WipeMethod::External);
 
     Options::DecryptionPlace d = options.decryptionPlace();
     ui->rbSame->setChecked(d == Options::DecryptionPlace::Inplace);
     ui->rbFolder->setChecked(d == Options::DecryptionPlace::Specified);
-    ui->rbFolder->toggle();
+    ui->frameDecryptFolder->setEnabled(d == Options::DecryptionPlace::Specified);
 
     ui->leKeyFile->setText(options.keyFile().c_str());
     ui->leWipeProgram->setText(options.wipeProgram().c_str());
