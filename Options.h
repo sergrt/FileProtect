@@ -2,7 +2,7 @@
 #define OPTIONS_H
 
 #include <string>
-#include "../cryptopp/aes.h"
+#include "../cryptopp/secblock.h"
 
 class Options {
 private:

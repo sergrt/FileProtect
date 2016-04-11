@@ -1,7 +1,7 @@
 #ifndef CRYPTOPPUTILS_H
 #define CRYPTOPPUTILS_H
 
-#include "../cryptopp/hex.h"
+#include "../cryptopp/secblock.h"
 #include <string>
 
 namespace CryptoPPUtils {

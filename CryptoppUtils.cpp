@@ -1,4 +1,5 @@
 #include "CryptoppUtils.h"
+#include "../cryptopp/hex.h"
 
 namespace CryptoPPUtils {
     SecByteBlock HexDecodeString(const std::string& hexStr) {
@@ -11,7 +12,6 @@ namespace CryptoPPUtils {
     std::string HexEncodeString(const std::string& src) {
         std::string res;
         StringSource ss(src, true, new HexEncoder(new StringSink(res)));
-
         return res;
     }
 }

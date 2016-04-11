@@ -10,7 +10,7 @@
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 #include <QProcess>
 #include <QDateTime>
-#include "CryptoppUtils.cpp"
+#include "CryptoppUtils.h"
 
 
 MainWindow::MainWindow(QWidget *parent) :
