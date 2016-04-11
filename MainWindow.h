@@ -61,6 +61,9 @@ private:
 
     std::vector<FileOperation> fileOperations;
     void closeEvent(QCloseEvent* event);
+public slots:
+    void onSetRestoreEncrypted(const std::string& encryptedName);
+    void onRestoreEncrypted();
 };
 
 #endif // MAINWINDOW_H

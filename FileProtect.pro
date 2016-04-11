@@ -18,13 +18,16 @@ SOURCES += main.cpp\
     OptionsDialog.cpp \
     Options.cpp \
     WaitDialog.cpp \
+    FileOperation.cpp \
     FilesSyncDialog.cpp
 
 HEADERS  += MainWindow.h \
     OptionsDialog.h \
     Options.h \
     WaitDialog.h \
+    FileOperation.h \
     FilesSyncDialog.h
+
 
 FORMS    += MainWindow.ui \
     OptionsDialog.ui \

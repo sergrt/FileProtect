@@ -12,5 +12,7 @@ public:
     std::string destinationPathName;
     unsigned long initialFileSize;
     time_t initialModificationTime;
+
+    bool restoreEncrypted = false;
 };
 

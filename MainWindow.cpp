@@ -52,7 +52,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     waitDlg.hide();
 
+    connect(ui->actionShow_decrypted, &QAction::triggered, this, [=]() {
+        for (const auto& op : fileOperations)
+            syncDlg.push_back(op);
+        syncDlg.show();
+    });
 
+
+    connect(&syncDlg, &FilesSyncDialog::setRestoreEncrypted, this, &MainWindow::onSetRestoreEncrypted);
+    connect(&syncDlg, &FilesSyncDialog::restoreEncrypted, this, &MainWindow::onRestoreEncrypted);
 }
 
 void MainWindow::updateKeys() {
@@ -175,21 +183,23 @@ void MainWindow::doDecrypt(const std::string& infile) {
     if (options.decryptionPlace() == Options::DecryptionPlace::Specified) {
         QFileInfo fileInfo(infile.c_str());
         QString filename(fileInfo.fileName());
-        outfile = options.decryptionFolder() + filename.toStdString() + ".11";
+        outfile = options.decryptionFolder() + filename.toStdString();
     } else {
         outfile = infile + ".dec";
     }
     CryptoPP::FileSource(infile.c_str(), true, new CryptoPP::StreamTransformationFilter(aes, new CryptoPP::FileSink(outfile.c_str())));
     //
-    QFile infl(infile.c_str());
+    QFile infl(outfile.c_str());
     const unsigned long sz = infl.size();
     QFileInfo ff(infl);
     time_t timestamp = ff.lastModified().toTime_t();
     fileOperations.emplace_back(FileOperation(infile, outfile, sz, timestamp));
     //
-    doRemove(infile);
-    QFile f(outfile.c_str());
-    f.rename(infile.c_str());
+    if (options.decryptionPlace() == Options::DecryptionPlace::Inplace) {
+        doRemove(infile);
+        QFile f(outfile.c_str());
+        f.rename(infile.c_str());
+    }
 }
 
 void MainWindow::doCount(const std::string& /*fileName*/) {
@@ -198,8 +208,7 @@ void MainWindow::doCount(const std::string& /*fileName*/) {
 
 void MainWindow::doRemove(const std::string& fileName) {
     if (options.wipeMethod() == Options::WipeMethod::Regular) {
-        QFile f(fileName.c_str());
-        f.remove();
+        QFile::remove(fileName.c_str());
     } else if (options.wipeMethod() == Options::WipeMethod::External) {
         const QString execStr = QString(options.wipeProgram().c_str()).arg(fileName.c_str());
         QProcess p;
@@ -286,5 +295,38 @@ void MainWindow::closeEvent(QCloseEvent* event) {
             syncDlg.push_back(op);
 
         syncDlg.show();
+    }
+}
+void MainWindow::onSetRestoreEncrypted(const std::string& encryptedName) {
+    for (auto& op : fileOperations) {
+        if (encryptedName == op.sourcePathName)
+            op.restoreEncrypted = true;
+    }
+}
+void MainWindow::onRestoreEncrypted() {
+    std::vector<std::string> names;
+    std::vector<std::string> namesToReplace;
+    for (const auto& op : fileOperations) {
+        if (op.restoreEncrypted) {
+            names.emplace_back(op.destinationPathName);
+            namesToReplace.emplace_back(op.sourcePathName);
+        }
+    }
+    processItems(names, &MainWindow::doEncrypt);
+
+    int filesLeft = names.size();
+    for (std::size_t i = 0; i < names.size(); ++i) {
+        QFile f(names[i].c_str());
+        QFile d(namesToReplace[i].c_str());
+        if (d.remove()) {
+            if (f.rename(namesToReplace[i].c_str()))
+                --filesLeft;
+        }
+    }
+
+    if (filesLeft != 0) {
+        QMessageBox m;
+        m.setText(QString("Error moving files. %1 files left in temporary dir.").arg(filesLeft));
+        m.exec();
     }
 }

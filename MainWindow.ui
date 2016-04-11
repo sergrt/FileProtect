@@ -54,6 +54,7 @@
    <addaction name="actionDecrypt_selected"/>
    <addaction name="actionWipe_selected"/>
    <addaction name="actionOptions"/>
+   <addaction name="actionShow_decrypted"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionUp_one_level">
@@ -84,6 +85,11 @@
   <action name="actionWipe_selected">
    <property name="text">
     <string>Wipe selected</string>
+   </property>
+  </action>
+  <action name="actionShow_decrypted">
+   <property name="text">
+    <string>Show decrypted</string>
    </property>
   </action>
  </widget>
