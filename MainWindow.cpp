@@ -4,20 +4,14 @@
 #include "../cryptopp/modes.h"
 #include "../cryptopp/files.h"
 #include "../cryptopp/aes.h"
-#include "../cryptopp/hex.h"
+
 
 #include <QMessageBox>
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 #include <QProcess>
 #include <QDateTime>
-#include <algorithm>
+#include "CryptoppUtils.cpp"
 
-CryptoPP::SecByteBlock HexDecodeString(const std::string& hexStr) {
-    CryptoPP::StringSource ss(hexStr, true, new CryptoPP::HexDecoder);
-    CryptoPP::SecByteBlock result((size_t)ss.MaxRetrievable());
-    ss.Get(result, result.size());
-    return result;
-}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), optionsDlg(options) {
@@ -66,8 +60,8 @@ MainWindow::MainWindow(QWidget *parent) :
 void MainWindow::updateKeys() {
     std::string hexKey(CryptoPP::AES::MAX_KEYLENGTH,'0');
     std::string hexIv(CryptoPP::AES::BLOCKSIZE, '0');
-    key = HexDecodeString(hexKey);
-    iv = HexDecodeString(hexIv);
+    key = CryptoPPUtils::HexDecodeString(hexKey);
+    iv = CryptoPPUtils::HexDecodeString(hexIv);
 }
 QFileSystemModel* MainWindow::model() {
     return static_cast<QFileSystemModel*>(ui->treeView->model());

@@ -3,41 +3,47 @@
 
 //#include "../cryptopp/aes.h"
 #include "../cryptopp/modes.h"
-#include "../cryptopp/hex.h"
+#include "CryptoppUtils.h"
 
 const std::string keyStr = "12345678901234567890123456789012";
 const std::string ivStr = "1234567890123456";
 
-CryptoPP::SecByteBlock hexDecode(const std::string& s) {
-    using namespace CryptoPP;
-    SecByteBlock key;
-    {
-        HexDecoder decoder;
 
-        decoder.Put((byte*)s.data(), s.size());
-        decoder.MessageEnd();
-
-        word64 size = decoder.MaxRetrievable();
-        if(size && size <= SIZE_MAX) {
-            key.resize(size);
-            decoder.Get(key, key.size());
-        }
-    }
-    return key;
-}
 
 Options::Options()
-    : key(hexDecode(keyStr)), iv(hexDecode(ivStr)) {
+    /*: key(CryptoPPUtils::HexDecodeString(keyStr)), iv(CryptoPPUtils::HexDecodeString(ivStr))*/ {
 
     m_keyStorage = KeyStorage::Keyboard;
     m_wipeMethod = WipeMethod::Regular;
     m_keyFile = "123";
     m_wipeProgram = "123";
+/*
+    const std::string keyStr = "12345678901234567890123456789012";
+    const std::string ivStr = "1234567890123456";
+
+
+    key = CryptoPPUtils::HexDecodeString(keyStr);
+    iv = CryptoPPUtils::HexDecodeString(ivStr);
+    */
+
+
 
     load();
 
 }
+
+void Options::updateKeys() {
+    std::string hexKey(CryptoPP::AES::DEFAULT_KEYLENGTH,'6');
+    std::string hexIv(CryptoPP::AES::BLOCKSIZE, '3');
+    key = CryptoPPUtils::HexDecodeString(hexKey);
+    iv = CryptoPPUtils::HexDecodeString(hexIv);
+}
+
 void Options::load() {
+
+    updateKeys();
+
+
     QSettings s(iniName.c_str(), QSettings::IniFormat);
     s.beginGroup("General");
 
@@ -45,11 +51,7 @@ void Options::load() {
 
     std::string keyFile = s.value("KeyFile", "").toString().toStdString();
 
-    try {
-        m_keyFile = decryptString(keyFile);
-    } catch( CryptoPP::Exception& e ) {
-        exit(1);
-    }
+    m_keyFile = decryptString(keyFile);
 
     fromString(m_wipeMethod, s.value("WipeMethod", "").toString().toStdString());
     std::string wipeProgram = s.value("WipeProgram", "").toString().toStdString();
@@ -68,31 +70,50 @@ void Options::load() {
     }
 }
 
+#include <sstream>
+#include <iomanip>
+#include "../cryptopp/base64.h"
 std::string Options::encryptString(const std::string& src) {
-    return src;
+
     using namespace CryptoPP;
     CTR_Mode<AES>::Encryption e(key, key.size(), iv);
 
-    std::string cipher;
-    StringSource ss1(src, true, new StreamTransformationFilter(e, new StringSink(cipher)));
+    byte* b = new byte[src.size()];
+    for (int i = 0; i < src.size(); ++i)
+        b[i] = src[i];
 
-    std::string hexStr;
-    StringSource ss2(cipher, true, new HexEncoder(new StringSink(hexStr)));
+    std::string cipher;
+    StringSource ss(b, true, new StreamTransformationFilter(e, new StringSink(cipher)));
+
+    byte
+
+
+
+
+    //return src;
+    using namespace CryptoPP;
+
+    CTR_Mode<AES>::Encryption e(key, key.size(), iv);
+
+    std::string cipher;
+    StringSource ss(src, true, new StreamTransformationFilter(e, new StringSink(cipher)));
+
+    //std::string hexStr = CryptoPPUtils::HexEncodeString(cipher);
+    std::string hexStr = cipher;
+
     return hexStr;
 }
 std::string Options::decryptString(const std::string& src) {
-    return src;
-    using namespace CryptoPP;
-    CTR_Mode<AES>::Decryption e(key, key.size(), iv);
+    //return src;
 
-    std::string source = src, destination;
-    HexDecoder decoder(new StringSink(destination));
-    decoder.Put(reinterpret_cast<const byte*>(source.data()), source.size());
+    using namespace CryptoPP;
+    CTR_Mode<AES>::Decryption d(key, key.size(), iv);
+
+    //SecByteBlock b = CryptoPPUtils::HexDecodeString(src);
+    std::string b = src;
 
     std::string plain;
-    StringSource ss1(destination, true, new StreamTransformationFilter(e, new StringSink(plain)));
-
-
+    StringSource ss(b, true, new StreamTransformationFilter(d, new StringSink(plain)));
 
     return plain;
 /*
@@ -106,17 +127,14 @@ std::string Options::decryptString(const std::string& src) {
 }
 
 void Options::save() {
+    updateKeys();
     QSettings s(iniName.c_str(), QSettings::IniFormat);
     s.beginGroup("General");
     s.setValue("KeyStorage", toString(m_keyStorage).c_str());
 
-    std::string keyFileEncrypted;
-    try {
-        keyFileEncrypted = encryptString(m_keyFile);
-    } catch( CryptoPP::Exception& e ) {
-        //cerr << e.what() << endl;
-        exit(1);
-    }
+
+    std::string keyFileEncrypted = encryptString(m_keyFile);
+
     s.setValue("KeyFile", keyFileEncrypted.c_str());
     s.setValue("WipeMethod", toString(m_wipeMethod).c_str());
 
@@ -138,6 +156,7 @@ void Options::save() {
         exit(1);
     }
     s.setValue("DecryptionFolder", decryptionFolderEncrypted.c_str());
+
 }
 
 Options::KeyStorage Options::keyStorage() const {

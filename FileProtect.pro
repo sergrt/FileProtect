@@ -19,14 +19,16 @@ SOURCES += main.cpp\
     Options.cpp \
     WaitDialog.cpp \
     FileOperation.cpp \
-    FilesSyncDialog.cpp
+    FilesSyncDialog.cpp \
+    CryptoppUtils.cpp
 
 HEADERS  += MainWindow.h \
     OptionsDialog.h \
     Options.h \
     WaitDialog.h \
     FileOperation.h \
-    FilesSyncDialog.h
+    FilesSyncDialog.h \
+    CryptoppUtils.h
 
 
 FORMS    += MainWindow.ui \

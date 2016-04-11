@@ -7,8 +7,8 @@
 class Options {
 private:
     const std::string iniName = "settings.ini";
-    const CryptoPP::SecByteBlock key;
-    const CryptoPP::SecByteBlock iv;
+    /*const*/ CryptoPP::SecByteBlock key;
+    /*const*/ CryptoPP::SecByteBlock iv;
     std::string encryptString(const std::string& src);
     std::string decryptString(const std::string& src);
 public:
@@ -132,6 +132,8 @@ public:
     std::string wipeProgram() const;
     DecryptionPlace decryptionPlace() const;
     std::string decryptionFolder() const;
+
+    void updateKeys();
 };
 
 #endif // OPTIONS_H
