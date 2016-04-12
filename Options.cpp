@@ -6,8 +6,8 @@
 #include "../cryptopp/filters.h"
 #include "CryptoppUtils.h"
 
-const std::string keyStr = "12345678901234567890123456789012";
-const std::string ivStr = "1234567890123456";
+const std::string keyStr = "1234567890123456789012345678901212345678901234567890123456789012";
+const std::string ivStr = "12345678901234561234567890123456";
 
 Options::Options() {
     m_keyStorage = KeyStorage::Keyboard;
@@ -21,8 +21,11 @@ void Options::updateKeys() {
     key.resize(CryptoPP::AES::MAX_KEYLENGTH);
     iv.resize(CryptoPP::AES::BLOCKSIZE);
 
-    memcpy(key.BytePtr(), CryptoPPUtils::HexDecodeString(keyStr).BytePtr(), keyStr.size());
-    memcpy(iv.BytePtr(), CryptoPPUtils::HexDecodeString(ivStr).BytePtr(), ivStr.size());
+    memcpy(key.BytePtr(), CryptoPPUtils::HexDecodeString(keyStr).BytePtr(), CryptoPP::AES::MAX_KEYLENGTH);
+    memcpy(iv.BytePtr(), CryptoPPUtils::HexDecodeString(ivStr).BytePtr(), CryptoPP::AES::BLOCKSIZE);
+
+    //memset(key.BytePtr(), '0', keyStr.size());
+    //memset(iv.BytePtr(), '0', ivStr.size());
 }
 
 void Options::load() {
@@ -47,6 +50,7 @@ void Options::load() {
         m_decryptionFolder = decryptString(decryptionFolder);
     } catch( CryptoPP::Exception& e ) {
         //exit(1);
+        //exit(1);
     }
 }
 
@@ -68,9 +72,12 @@ std::string Options::decryptString(const std::string& src) {
 
     std::string srcDecoded;
     SecByteBlock tmp = CryptoPPUtils::HexDecodeString(src);
+    /*
     srcDecoded.resize(tmp.size());
-    for (int i = 0; i < tmp.size(); ++i)
+    for (std::size_t i = 0; i < tmp.size(); ++i)
         srcDecoded[i] = tmp[i];
+    */
+    srcDecoded.assign((char*)tmp.BytePtr(), tmp.size());
 
     CryptoPP::AES::Decryption aesDecryption(key, key.size());
     CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption(aesDecryption, iv);
