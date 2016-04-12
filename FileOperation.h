@@ -1,12 +1,12 @@
 #pragma once
 #include <string>
-//#include <time.h>
 
-class FileOperation {
+struct FileOperation {
 public:
     FileOperation(const std::string& src, const std::string& dst, unsigned long sz, const time_t& t);
     ~FileOperation();
     FileOperation(FileOperation&& op);
+
 //private:
     std::string sourcePathName;
     std::string destinationPathName;

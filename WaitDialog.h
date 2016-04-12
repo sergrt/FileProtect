@@ -4,11 +4,10 @@
 #include <QDialog>
 
 namespace Ui {
-class WaitDialog;
+    class WaitDialog;
 }
 
-class WaitDialog : public QDialog
-{
+class WaitDialog : public QDialog {
     Q_OBJECT
 
 public:

@@ -5,15 +5,13 @@
 #include "Options.h"
 
 namespace Ui {
-class OptionsDialog;
+    class OptionsDialog;
 }
 
-class OptionsDialog : public QDialog
-{
+class OptionsDialog : public QDialog {
     Q_OBJECT
 
 public:
-    //explicit OptionsDialog(QWidget *parent = 0);
     OptionsDialog(Options& options);
     ~OptionsDialog();
 
@@ -23,6 +21,7 @@ private:
 
     void onOkClick();
     void update();
+    bool validate() const;
 };
 
 #endif // OPTIONSDIALOG_H

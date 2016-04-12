@@ -22,9 +22,13 @@ private:
     enum Columns {
         ColumnCheckBox = 0,
         ColumnSourceFileName = 1,
-        ColumnInitialFileSize = 2,
-        ColumnDifSize = 3,
-        ColumnDifTime = 4
+        /*
+         * ColumnInitialFileSize = 2,
+         * ColumnDifSize = 3,
+         * ColumnDifTime = 4
+         */
+        ColumnDifSize = 2,
+        ColumnDifTime = 3
     };
     const QColor difSizeColor = QColor(255, 153,  51);
     const QColor difTimeColor = QColor(255, 255,   0);
