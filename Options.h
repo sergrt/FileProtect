@@ -37,6 +37,8 @@ public:
     void setDecryptionPlace(DecryptionPlace p);
     void setDecryptionFolder(const std::string& f);
 
+    void setRootPath(const std::string& p);
+
     KeyStorage keyStorage() const;
     std::string keyFile() const;
     WipeMethod wipeMethod() const;
@@ -44,8 +46,8 @@ public:
     DecryptionPlace decryptionPlace() const;
     std::string decryptionFolder() const;
 
+    std::string rootPath() const;
 private:
-    const std::string iniName = "settings.ini";
     CryptoPP::SecByteBlock key;
     CryptoPP::SecByteBlock iv;
     void updateKeys();
@@ -57,9 +59,10 @@ private:
     std::string m_keyFile;
     WipeMethod m_wipeMethod;
     std::string m_wipeProgram;
-
     DecryptionPlace m_decryptionPlace;
     std::string m_decryptionFolder;
+
+    std::string m_rootPath;
 };
 
 #endif // OPTIONS_H

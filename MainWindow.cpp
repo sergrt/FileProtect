@@ -5,13 +5,14 @@
 #include "../cryptopp/files.h"
 #include "../cryptopp/aes.h"
 
-
 #include <QMessageBox>
-const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 #include <QProcess>
 #include <QDateTime>
 #include "CryptoppUtils.h"
+#include <algorithm>
+#include <QCloseEvent>
 
+const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), optionsDlg(options) {
@@ -20,7 +21,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QFileSystemModel* model = new QFileSystemModel;
     connect(model, &QFileSystemModel::rootPathChanged, this, &MainWindow::onRootPathChanged);
 
-    model->setRootPath(QDir::currentPath());
     //model->setFilter(QDir::AllEntries);
     connect(ui->actionUp_one_level, &QAction::triggered, this, &MainWindow::onUpOneLevelClick);
     connect(ui->actionSet_as_root, &QAction::triggered, this, &MainWindow::onSetAsRoot);
@@ -32,8 +32,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     optionsDlg.hide();
 
+    const std::string rootPath = options.rootPath();
+    model->setRootPath(rootPath.size() > 0 ? rootPath.c_str() : QDir::currentPath());
+
     ui->treeView->setModel(model);
-    ui->treeView->setRootIndex(model->index(QDir::currentPath()));
+    ui->treeView->setRootIndex(model->index(model->rootPath()));
     ui->treeView->setColumnWidth(0, 200);
 
 
@@ -50,7 +53,8 @@ MainWindow::MainWindow(QWidget *parent) :
         syncDlg.clear();
         for (const auto& op : fileOperations)
             syncDlg.push_back(op);
-        syncDlg.show();
+        if (syncDlg.exec() == QDialog::Rejected)
+            fileOperations.clear();
     });
 
 
@@ -81,11 +85,16 @@ void MainWindow::onCustomContextMenu(const QPoint& point) {
 
 void MainWindow::onUpOneLevelClick() {
     QModelIndex currentRoot = ui->treeView->rootIndex();
-    ui->treeView->setRootIndex(currentRoot.parent());
-    onRootPathChanged(model()->filePath(currentRoot));
+    if (currentRoot.isValid()) {
+        QModelIndex parent = currentRoot.parent();
+        const QString rootPath = model()->filePath(parent);
+        model()->setRootPath(rootPath);
+        ui->treeView->setRootIndex(parent);
+    }
 }
 
 void MainWindow::onSetAsRoot() {
+    /*
     QModelIndex currentIndex = ui->treeView->currentIndex();
     if (model()->isDir(currentIndex))
         ui->treeView->setRootIndex(currentIndex);
@@ -93,14 +102,27 @@ void MainWindow::onSetAsRoot() {
         ui->treeView->setRootIndex(currentIndex.parent());
 
     onRootPathChanged(model()->filePath(currentIndex));
+    */
+
+    QModelIndex currentIndex = ui->treeView->currentIndex();
+    if (currentIndex.isValid()) {
+        if (!model()->isDir(currentIndex))
+            currentIndex = currentIndex.parent();
+        if (currentIndex.isValid()) {
+            const QString rootPath = model()->filePath(currentIndex);
+            model()->setRootPath(rootPath);
+            ui->treeView->setRootIndex(currentIndex);
+        }
+    }
 }
 
 void MainWindow::onRootPathChanged(const QString &newPath) {
     ui->currentRoot->setText(newPath);
+    options.setRootPath(newPath.toStdString());
+    options.save();
 }
 
 void MainWindow::processOperation(Operation operation) {
-
     waitDlg.init(0);
     waitDlg.show();
     std::vector<std::string> names;
@@ -112,9 +134,6 @@ void MainWindow::processOperation(Operation operation) {
     std::vector<std::string> unprocessedSrcNames;
     const unsigned int totalCount = processItems(names, unprocessedSrcNames, &MainWindow::doCount);
     //waitDlg.hide();
-
-
-
 
 
     bool (MainWindow::*memberFn)(const std::string&) = nullptr;
@@ -179,6 +198,8 @@ bool MainWindow::doEncrypt(const std::string& infile) {
 
         if (!doRemove(infile) || !QFile::rename(outfile.c_str(), infile.c_str()))
             throw std::runtime_error("Error file removing/renaming");
+
+        removeFromFileOps(infile);
     } catch (std::exception&) {
         res = false;
     }
@@ -188,7 +209,6 @@ bool MainWindow::doEncrypt(const std::string& infile) {
 
 bool MainWindow::doDecrypt(const std::string& infile) {
     bool res = true;
-
 
     try {
         std::string outfile = infile;
@@ -228,8 +248,7 @@ bool MainWindow::doDecrypt(const std::string& infile) {
     return res;
 }
 
-bool MainWindow::doCount(const std::string& /*fileName*/) {
-    // do nothing
+bool MainWindow::doCount(const std::string& fileName) {
     return true;
 }
 
@@ -249,52 +268,22 @@ bool MainWindow::doRemove(const std::string& fileName) {
 }
 
 int MainWindow::processItems(const std::vector<std::string>& names, std::vector<std::string>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::string&)) {
-    /*
-    int res = 0;
-    for (const auto& name : names) {
-        const char* tmpName = name.c_str();
-        QFileInfo f(tmpName);
-        if (f.isDir()) {
-            QDir dir(tmpName);
-            QFileInfoList fil = dir.entryInfoList(QDir::Filter(dirFilter));
-            for (const auto& f : fil) {
-                waitDlg.step();
-                qApp->processEvents();
-
-                if (f.isDir()) {
-                    std::vector<std::string> tmp;
-                    tmp.emplace_back(f.absoluteFilePath().toStdString());
-                    res += processItems(tmp, procFunc);
-                } else {
-                    (this->*procFunc)(f.absoluteFilePath().toStdString());
-                    ++res;
-                }
-            }
-        } else {
-            (this->*procFunc)(f.absoluteFilePath().toStdString());
-            ++res;
-        }
-    }
-    return res;
-    */
-
     int res = 0;
     for (const auto& name : names) {
         const char* tmpName = name.c_str();
         QFileInfo f(tmpName);
         if (!f.isDir()) {
-            if ((this->*procFunc)(f.absoluteFilePath().toStdString())) {
+            waitDlg.step();
+            qApp->processEvents();
+
+            if ((this->*procFunc)(f.absoluteFilePath().toStdString()))
                 ++res;
-            } else {
+            else
                 unprocessedSrcNames.push_back(name);
-            }
         } else {
             QDir dir(tmpName);
             QFileInfoList fil = dir.entryInfoList(QDir::Filter(dirFilter));
             for (const auto& f : fil) {
-                waitDlg.step();
-                qApp->processEvents();
-
                 std::vector<std::string> tmp;
                 tmp.emplace_back(f.absoluteFilePath().toStdString());
                 res += processItems(tmp, unprocessedSrcNames, procFunc);
@@ -314,7 +303,8 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         for (const auto& op : fileOperations)
             syncDlg.push_back(op);
 
-        syncDlg.show();
+        if (syncDlg.exec() == QDialog::Rejected)
+            event->ignore();
     }
 }
 void MainWindow::onSetRestoreEncrypted(const std::string& encryptedName) {
@@ -323,7 +313,7 @@ void MainWindow::onSetRestoreEncrypted(const std::string& encryptedName) {
             op.restoreEncrypted = true;
     }
 }
-#include <algorithm>
+
 void MainWindow::onRestoreEncrypted() {
     std::vector<std::string> names;
     std::vector<std::string> namesToReplace;
@@ -338,19 +328,11 @@ void MainWindow::onRestoreEncrypted() {
 
     // removing encrypted files from filesOperations list
     for (const auto& n : namesToReplace) {
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end()) {
-            for (std::size_t i = 0; i < fileOperations.size(); ++i) {
-                if (fileOperations[i].sourcePathName == n) {
-                    FileOperation tmp(std::move(fileOperations[i]));
-                    fileOperations.erase(fileOperations.begin() + i);
-                    syncDlg.remove(tmp);
-                    break;
-                }
-            }
-        }
+        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
+            removeFromFileOps(n);
     }
 
-    int filesLeft = names.size();
+    std::size_t filesLeft = names.size();
     for (std::size_t i = 0; i < names.size(); ++i) {
         if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), namesToReplace[i]) == unprocessedSrcNames.end()) {
             // file was successfully encrypted, now it's time to restore its path if necessary
@@ -371,5 +353,16 @@ void MainWindow::onRestoreEncrypted() {
                 .arg(unprocessedSrcNames.size()).arg(filesLeft);
         m.setText(msgText);
         m.exec();
+    }
+}
+
+void MainWindow::removeFromFileOps(const std::string& sourceName) {
+    for (std::size_t i = 0; i < fileOperations.size(); ++i) {
+        if (fileOperations[i].sourcePathName == sourceName) {
+            FileOperation tmp(std::move(fileOperations[i]));
+            fileOperations.erase(fileOperations.begin() + i);
+            syncDlg.remove(tmp);
+            break;
+        }
     }
 }

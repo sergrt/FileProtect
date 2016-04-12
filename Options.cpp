@@ -12,6 +12,7 @@ const std::string keyStr = "1234567890123456789012345678901212345678901234567890
 const std::string ivStr = "12345678901234561234567890123456";
 
 namespace OptionsText {
+    const std::string iniName = "settings.ini";
     namespace Groups {
         const QString general = "General";
     }
@@ -33,6 +34,7 @@ namespace OptionsText {
         const std::string specified = "specified";
     }
     const QString decryptionFolder = "DecryptionFolder";
+    const QString rootPath = "RootPath";
 }
 
 Options::Options() {
@@ -86,7 +88,7 @@ bool Options::load() {
     bool res = true;
     try {
         updateKeys();
-        QSettings s(iniName.c_str(), QSettings::IniFormat);
+        QSettings s(OptionsText::iniName.c_str(), QSettings::IniFormat);
         s.beginGroup(OptionsText::Groups::general);
 
         KeyStorage k;
@@ -94,7 +96,7 @@ bool Options::load() {
             throw std::runtime_error("Error converting options to string");
         setKeyStorage(k);
 
-        std::string keyFile = s.value(OptionsText::keyFile, "").toString().toStdString();
+        const std::string keyFile = s.value(OptionsText::keyFile, "").toString().toStdString();
         setKeyFile(decryptString(keyFile));
 
         WipeMethod w;
@@ -102,7 +104,7 @@ bool Options::load() {
             throw std::runtime_error("Error converting options to string");
         setWipeMethod(w);
 
-        std::string wipeProgram = s.value(OptionsText::wipeProgram, "").toString().toStdString();
+        const std::string wipeProgram = s.value(OptionsText::wipeProgram, "").toString().toStdString();
         setWipeProgram(decryptString(wipeProgram));
     
         DecryptionPlace d;
@@ -110,11 +112,12 @@ bool Options::load() {
             throw std::runtime_error("Error converting options to string");
         setDecryptionPlace(d);
 
-        std::string decryptionFolder = s.value(OptionsText::decryptionFolder, "").toString().toStdString();
+        const std::string decryptionFolder = s.value(OptionsText::decryptionFolder, "").toString().toStdString();
         setDecryptionFolder(decryptString(decryptionFolder));
-    } catch (CryptoPP::Exception&) {
-        res = false;
-    } catch (std::runtime_error&) {
+
+        const std::string rootPath = s.value(OptionsText::rootPath, "").toString().toStdString();
+        setRootPath(decryptString(rootPath));
+    } catch (std::exception&) {
         res = false;
     }
 
@@ -125,7 +128,7 @@ bool Options::save() {
     bool res = true;
     try {
         updateKeys();
-        QSettings s(iniName.c_str(), QSettings::IniFormat);
+        QSettings s(OptionsText::iniName.c_str(), QSettings::IniFormat);
         s.beginGroup(OptionsText::Groups::general);
 
         s.setValue(OptionsText::KeyStorage::keyStorage, toString(keyStorage()).c_str());
@@ -139,9 +142,10 @@ bool Options::save() {
         s.setValue(OptionsText::DecryptionPlace::decryptionPlace, toString(decryptionPlace()).c_str());
         const std::string decryptionFolderEncrypted = encryptString(decryptionFolder());
         s.setValue(OptionsText::decryptionFolder, decryptionFolderEncrypted.c_str());
-    } catch (CryptoPP::Exception&) {
-        res = false;
-    } catch (std::runtime_error&) {
+
+        const std::string rootPathEncrypted = encryptString(rootPath());
+        s.setValue(OptionsText::rootPath, rootPathEncrypted.c_str());
+    } catch (std::exception&) {
         res = false;
     }
     return res;
@@ -166,6 +170,9 @@ std::string Options::wipeProgram() const {
 std::string Options::decryptionFolder() const {
     return m_decryptionFolder;
 }
+std::string Options::rootPath() const {
+    return m_rootPath;
+}
 
 void Options::setKeyStorage(KeyStorage k) {
     m_keyStorage = k;
@@ -183,9 +190,12 @@ void Options::setKeyFile(const std::string& f) {
 void Options::setWipeProgram(const std::string& p) {
     m_wipeProgram = p;
 }
-
-void Options::setDecryptionFolder(const std::string &f) {
+void Options::setDecryptionFolder(const std::string& f) {
     m_decryptionFolder = f;
+}
+
+void Options::setRootPath(const std::string& p) {
+    m_rootPath = p;
 }
 
 std::string Options::toString(KeyStorage k) {

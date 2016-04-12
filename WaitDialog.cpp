@@ -1,8 +1,8 @@
 #include "WaitDialog.h"
 #include "ui_WaitDialog.h"
 
-WaitDialog::WaitDialog(QWidget *parent) :
-    QDialog(parent), ui(new Ui::WaitDialog) {
+WaitDialog::WaitDialog(QWidget *parent)
+    : QDialog(parent), ui(new Ui::WaitDialog) {
     ui->setupUi(this);
 }
 

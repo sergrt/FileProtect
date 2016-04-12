@@ -2,8 +2,8 @@
 #include "ui_OptionsDialog.h"
 #include <QMessageBox>
 
-OptionsDialog::OptionsDialog(Options& options) :
-    QDialog(), ui(new Ui::OptionsDialog), options(options) {
+OptionsDialog::OptionsDialog(Options& options)
+    : QDialog(), ui(new Ui::OptionsDialog), options(options) {
     ui->setupUi(this);
     connect(ui->rbFile, &QRadioButton::toggled, this, [=](bool toggled){ui->frameKeyFile->setEnabled(toggled);});
     connect(ui->rbExt, &QRadioButton::toggled, this, [=](bool toggled){ui->frameWipeProgram->setEnabled(toggled);});

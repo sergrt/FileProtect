@@ -80,9 +80,6 @@
     <ClCompile Include="Release\moc_WaitDialog.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="FileOperation.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="Debug\moc_FilesSyncDialog.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
@@ -93,6 +90,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CryptoppUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileOperation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -137,13 +137,13 @@
     <ClInclude Include="GeneratedFiles\ui_WaitDialog.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileOperation.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_FilesSyncDialog.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="CryptoppUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileOperation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -17,17 +17,51 @@
    <string>Decrypted sync</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
-   <item row="0" column="0" colspan="4">
+   <item row="3" column="1">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>251</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="3" column="3">
+    <widget class="QPushButton" name="bnDiscard">
+     <property name="text">
+      <string>Discard &amp;&amp; close</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="4">
+    <widget class="QPushButton" name="bnEncryptSel">
+     <property name="text">
+      <string>Encrypt selected &amp;&amp; close</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="bnWipeSel">
+     <property name="text">
+      <string>Wipe selected</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="5">
     <widget class="QLabel" name="label">
      <property name="text">
       <string>List of decrypted (and not re-encrypted) files during current session:</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="0" colspan="4">
+   <item row="1" column="0" colspan="5">
     <widget class="QTableWidget" name="tableWidget"/>
    </item>
-   <item row="2" column="0" colspan="4">
+   <item row="2" column="0" colspan="5">
     <widget class="QFrame" name="frame">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
@@ -87,42 +121,27 @@
      </layout>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QPushButton" name="bnWipeSel">
-     <property name="text">
-      <string>Wipe selected</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>251</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
    <item row="3" column="2">
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="bnBackToMain">
      <property name="text">
-      <string>Close</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="3">
-    <widget class="QPushButton" name="bnEncryptSel">
-     <property name="text">
-      <string>Encrypt selected</string>
+      <string>Back to file view</string>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>bnBackToMain</tabstop>
+  <tabstop>bnDiscard</tabstop>
+  <tabstop>bnEncryptSel</tabstop>
+  <tabstop>bnWipeSel</tabstop>
+  <tabstop>bnSelAll</tabstop>
+  <tabstop>bnSelAllDif</tabstop>
+  <tabstop>bnSelDifSize</tabstop>
+  <tabstop>bnSelDifTime</tabstop>
+  <tabstop>bnSelNone</tabstop>
+  <tabstop>tableWidget</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

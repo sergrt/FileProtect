@@ -60,6 +60,7 @@ private:
     FilesSyncDialog syncDlg;
 
     std::vector<FileOperation> fileOperations;
+    void removeFromFileOps(const std::string& sourceName);
     void closeEvent(QCloseEvent* event);
 public slots:
     void onSetRestoreEncrypted(const std::string& encryptedName);

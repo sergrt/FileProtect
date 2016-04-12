@@ -7,9 +7,8 @@
 const QString textDifY = "Y";
 const QString textDifN = "N";
 
-FilesSyncDialog::FilesSyncDialog(QWidget *parent) :
-    QDialog(parent), ui(new Ui::FilesSyncDialog) {
-
+FilesSyncDialog::FilesSyncDialog(QWidget *parent)
+    : QDialog(parent), ui(new Ui::FilesSyncDialog) {
     ui->setupUi(this);
     connect(ui->bnSelAll, &QPushButton::clicked, this, &FilesSyncDialog::onSelAllClick);
     connect(ui->bnSelAllDif, &QPushButton::clicked, this, &FilesSyncDialog::onSelAllDifClick);
@@ -19,24 +18,24 @@ FilesSyncDialog::FilesSyncDialog(QWidget *parent) :
 
     connect(ui->bnEncryptSel, &QPushButton::clicked, this, &FilesSyncDialog::onEncryptSelClick);
 
+    connect(ui->bnDiscard, &QPushButton::clicked, this, [=]() { QDialog::accept(); });
+    connect(ui->bnBackToMain, &QPushButton::clicked, this, [=]() { QDialog::reject(); });
 
     ui->tableWidget->insertColumn(ColumnCheckBox);
     ui->tableWidget->insertColumn(ColumnSourceFileName);
     //ui->tableWidget->insertColumn(ColumnInitialFileSize);
     ui->tableWidget->insertColumn(ColumnDifSize);
     ui->tableWidget->insertColumn(ColumnDifTime);
+    
     QStringList header;
     header.push_back("#");
     header.push_back("File name");
     //header.push_back("Src size, bytes");
-    header.push_back("DS");
-    header.push_back("DT");
+    header.push_back("Dif Size");
+    header.push_back("Dif Time");
     ui->tableWidget->setHorizontalHeaderLabels(header);
 
-
-
     const int w = this->width();
-
     ui->tableWidget->setColumnWidth(ColumnCheckBox,        0.1*w);
     ui->tableWidget->setColumnWidth(ColumnSourceFileName,  0.5*w);
     //ui->tableWidget->setColumnWidth(ColumnInitialFileSize, 0.2*w);
@@ -168,4 +167,5 @@ void FilesSyncDialog::onEncryptSelClick() {
             emit setRestoreEncrypted(ui->tableWidget->item(row, ColumnSourceFileName)->text().toStdString());
     }
     emit restoreEncrypted();
+    QDialog::accept();
 }

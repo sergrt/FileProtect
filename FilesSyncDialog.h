@@ -44,7 +44,9 @@ private:
 
     void onEncryptSelClick();
 signals:
+    // sets FileOperation field to restore particular item
     void setRestoreEncrypted(const std::string& encryptedName);
+    // restores all encrypted files with restore flag
     void restoreEncrypted();
 };
 
