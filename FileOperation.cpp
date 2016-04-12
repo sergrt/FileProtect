@@ -11,6 +11,14 @@ FileOperation::FileOperation(FileOperation&& op) {
     std::swap(initialFileSize, op.initialFileSize);
     std::swap(initialModificationTime, op.initialModificationTime);
 }
+FileOperation& FileOperation::operator=(const FileOperation& op) {
+    this->sourcePathName = op.sourcePathName;
+    this->destinationPathName = op.destinationPathName;
+    this->initialFileSize = op.initialFileSize;
+    this->initialModificationTime = op.initialModificationTime;
+
+    return *this;
+}
 
 FileOperation::~FileOperation() {
 }

@@ -44,15 +44,15 @@ private:
     };
 
     void processOperation(Operation operation);
-    int processItems(const std::vector<std::string>& names, void (MainWindow::*procFunc)(const std::string&));
+    int processItems(const std::vector<std::string>& names, std::vector<std::string>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::string&));
     inline QFileSystemModel* model();
 
     CryptoPP::SecByteBlock key;
     CryptoPP::SecByteBlock iv;
-    void doEncrypt(const std::string& infile);
-    void doDecrypt(const std::string& infile);
-    void doRemove(const std::string& fileName);
-    void doCount(const std::string& fileName);
+    bool doEncrypt(const std::string& infile);
+    bool doDecrypt(const std::string& infile);
+    bool doRemove(const std::string& fileName);
+    bool doCount(const std::string& fileName);
 
     Options options;
     OptionsDialog optionsDlg;

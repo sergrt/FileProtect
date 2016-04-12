@@ -6,6 +6,7 @@ public:
     FileOperation(const std::string& src, const std::string& dst, unsigned long sz, const time_t& t);
     ~FileOperation();
     FileOperation(FileOperation&& op);
+    FileOperation& operator=(const FileOperation& op);
 
 //private:
     std::string sourcePathName;

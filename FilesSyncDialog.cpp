@@ -108,6 +108,21 @@ void FilesSyncDialog::push_back(const FileOperation &op) {
 
 }
 
+void FilesSyncDialog::clear() {
+    while (ui->tableWidget->rowCount() > 0)
+        ui->tableWidget->removeRow(0);
+}
+
+void FilesSyncDialog::remove(const FileOperation& op) {
+    for (int i = 0; i < ui->tableWidget->rowCount(); ++i) {
+        const std::string sName = ui->tableWidget->item(i, ColumnSourceFileName)->text().toStdString();
+        if (sName == op.sourcePathName) {
+            ui->tableWidget->removeRow(i);
+            break;
+        }
+    }
+}
+
 void FilesSyncDialog::onSelAllClick() {
     const int rowCount = ui->tableWidget->rowCount();
     for (int row = 0; row < rowCount; ++row)

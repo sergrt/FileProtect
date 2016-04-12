@@ -89,23 +89,29 @@ bool Options::load() {
         QSettings s(iniName.c_str(), QSettings::IniFormat);
         s.beginGroup(OptionsText::Groups::general);
 
-        if (!fromString(m_keyStorage, s.value(OptionsText::KeyStorage::keyStorage, "").toString().toStdString()))
+        KeyStorage k;
+        if (!fromString(k, s.value(OptionsText::KeyStorage::keyStorage, "").toString().toStdString()))
             throw std::runtime_error("Error converting options to string");
+        setKeyStorage(k);
 
         std::string keyFile = s.value(OptionsText::keyFile, "").toString().toStdString();
-        m_keyFile = decryptString(keyFile);
+        setKeyFile(decryptString(keyFile));
 
-        if (!fromString(m_wipeMethod, s.value(OptionsText::WipeMethod::wipeMethod, "").toString().toStdString()))
+        WipeMethod w;
+        if (!fromString(w, s.value(OptionsText::WipeMethod::wipeMethod, "").toString().toStdString()))
             throw std::runtime_error("Error converting options to string");
+        setWipeMethod(w);
 
         std::string wipeProgram = s.value(OptionsText::wipeProgram, "").toString().toStdString();
-        m_wipeProgram = decryptString(wipeProgram);
+        setWipeProgram(decryptString(wipeProgram));
     
-        if (!fromString(m_decryptionPlace, s.value(OptionsText::DecryptionPlace::decryptionPlace, "").toString().toStdString()))
+        DecryptionPlace d;
+        if (!fromString(d, s.value(OptionsText::DecryptionPlace::decryptionPlace, "").toString().toStdString()))
             throw std::runtime_error("Error converting options to string");
+        setDecryptionPlace(d);
 
         std::string decryptionFolder = s.value(OptionsText::decryptionFolder, "").toString().toStdString();
-        m_decryptionFolder = decryptString(decryptionFolder);
+        setDecryptionFolder(decryptString(decryptionFolder));
     } catch (CryptoPP::Exception&) {
         res = false;
     } catch (std::runtime_error&) {
@@ -122,16 +128,16 @@ bool Options::save() {
         QSettings s(iniName.c_str(), QSettings::IniFormat);
         s.beginGroup(OptionsText::Groups::general);
 
-        s.setValue(OptionsText::KeyStorage::keyStorage, toString(m_keyStorage).c_str());
-        std::string keyFileEncrypted = encryptString(m_keyFile);
+        s.setValue(OptionsText::KeyStorage::keyStorage, toString(keyStorage()).c_str());
+        const std::string keyFileEncrypted = encryptString(keyFile());
         s.setValue(OptionsText::keyFile, keyFileEncrypted.c_str());
 
-        s.setValue(OptionsText::WipeMethod::wipeMethod, toString(m_wipeMethod).c_str());
-        std::string wipeProgramEncrypted = encryptString(m_wipeProgram);
+        s.setValue(OptionsText::WipeMethod::wipeMethod, toString(wipeMethod()).c_str());
+        const std::string wipeProgramEncrypted = encryptString(wipeProgram());
         s.setValue(OptionsText::wipeProgram, wipeProgramEncrypted.c_str());
 
-        s.setValue(OptionsText::DecryptionPlace::decryptionPlace, toString(m_decryptionPlace).c_str());
-        std::string decryptionFolderEncrypted = encryptString(m_decryptionFolder);
+        s.setValue(OptionsText::DecryptionPlace::decryptionPlace, toString(decryptionPlace()).c_str());
+        const std::string decryptionFolderEncrypted = encryptString(decryptionFolder());
         s.setValue(OptionsText::decryptionFolder, decryptionFolderEncrypted.c_str());
     } catch (CryptoPP::Exception&) {
         res = false;

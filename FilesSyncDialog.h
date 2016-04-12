@@ -17,6 +17,8 @@ public:
     ~FilesSyncDialog();
 
     void push_back(const FileOperation& op);
+    void clear();
+    void remove(const FileOperation& op);
 private:
     Ui::FilesSyncDialog *ui;
     enum Columns {
