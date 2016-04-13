@@ -15,6 +15,8 @@
 #include <QDesktopServices>
 #include "ViewFileDialog.h"
 #include <QDesktopWidget>
+#include <InputKeyDialog.h>
+#include "../cryptopp/sha.h"
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
@@ -85,11 +87,52 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
-void MainWindow::updateKeys() {
-    std::string hexKey(CryptoPP::AES::MAX_KEYLENGTH,'0');
-    std::string hexIv(CryptoPP::AES::BLOCKSIZE, '0');
-    key = CryptoPPUtils::HexDecodeString(hexKey);
-    iv = CryptoPPUtils::HexDecodeString(hexIv);
+void MainWindow::updateKeyIv(std::string keyStr) {
+    byte digest[CryptoPP::SHA256::DIGESTSIZE];
+    CryptoPP::SHA256().CalculateDigest(digest, (byte*)keyStr.c_str(), keyStr.size());
+
+    key.resize(CryptoPP::AES::MAX_KEYLENGTH);
+    if (CryptoPP::SHA256::DIGESTSIZE != key.size())
+        throw "stst";
+    memcpy(key.BytePtr(), digest, CryptoPP::AES::MAX_KEYLENGTH);
+
+    std::reverse(keyStr.begin(), keyStr.end());
+    CryptoPP::SHA256().CalculateDigest(digest, (byte*)keyStr.c_str(), keyStr.size());
+    iv.resize(CryptoPP::AES::BLOCKSIZE);
+    memcpy(iv.BytePtr(), digest, CryptoPP::AES::BLOCKSIZE);
+}
+
+bool MainWindow::updateKeys() {
+    bool res = false;
+    if (options.keyStorage() == Options::KeyStorage::Keyboard) {
+        InputKeyDialog dlg;
+        if (dlg.exec() == QDialog::Accepted) {
+            std::string keyStr = dlg.getKey();
+            if (keyStr.size() > 0) {
+                updateKeyIv(keyStr);
+                res = true;
+            }
+        }
+    } else /*if (options.keyStorage() == Options::KeyStorage::File)*/ {
+        /*
+        std::string hexKey(CryptoPP::AES::MAX_KEYLENGTH,'0');
+        std::string hexIv(CryptoPP::AES::BLOCKSIZE, '0');
+        key = CryptoPPUtils::HexDecodeString(hexKey);
+        iv = CryptoPPUtils::HexDecodeString(hexIv);
+        */
+
+        QFile f(options.keyFile().c_str());
+        if (f.open(QFile::ReadOnly)) {
+            QByteArray b = f.readAll();
+            std::string keyStr(b);
+            f.close();
+            if (keyStr.size() > 0) {
+                updateKeyIv(keyStr);
+                res = true;
+            }
+        }
+    }
+    return res;
 }
 
 QFileSystemModel* MainWindow::model() {
@@ -194,60 +237,73 @@ void MainWindow::onRootPathChanged(const QString &newPath) {
 }
 
 void MainWindow::processOperation(Operation operation) {
-    waitDlg.init(0);
-    waitDlg.show();
-    std::vector<std::string> names;
+    try {
+        waitDlg.init(0);
+        waitDlg.show();
+        std::vector<std::string> names;
 
-    QModelIndexList list = ui->treeView->selectionModel()->selectedRows();
-    foreach(QModelIndex index, list)
-        names.emplace_back(model()->filePath(index).toStdString());
+        QModelIndexList list = ui->treeView->selectionModel()->selectedRows();
+        foreach(QModelIndex index, list)
+            names.emplace_back(model()->filePath(index).toStdString());
 
-    std::vector<std::string> unprocessedSrcNames;
-    const unsigned int totalCount = processItems(names, unprocessedSrcNames, &MainWindow::doCount);
-    //waitDlg.hide();
-
-
-    bool (MainWindow::*memberFn)(const std::string&) = nullptr;
-    switch (operation) {
-    case Operation::Encrypt:
-        memberFn = &MainWindow::doEncrypt;
-        updateKeys();
-        break;
-    case Operation::Decrypt:
-        memberFn = &MainWindow::doDecrypt;
-        updateKeys();
-        break;
-    case Operation::Wipe:
-        memberFn = &MainWindow::doRemove;
-        break;
-    }
+        std::vector<std::string> unprocessedSrcNames;
+        const unsigned int totalCount = processItems(names, unprocessedSrcNames, &MainWindow::doCount);
+        //waitDlg.hide();
 
 
-    waitDlg.init(totalCount);
-    //waitDlg.show();
-    unprocessedSrcNames.clear();
-    const unsigned int successfullyProcessed = processItems(names, unprocessedSrcNames, memberFn);
+        bool (MainWindow::*memberFn)(const std::string&) = nullptr;
+        switch (operation) {
+        case Operation::Encrypt:
+            memberFn = &MainWindow::doEncrypt;
+            if (!updateKeys())
+                throw std::logic_error("Unable to obtain key");
+            break;
+        case Operation::Decrypt:
+            memberFn = &MainWindow::doDecrypt;
+            if (!updateKeys())
+                throw std::logic_error("Unable to obtain key");
+            break;
+        case Operation::Wipe:
+            memberFn = &MainWindow::doRemove;
+            break;
+        }
 
-    if (operation == Operation::Wipe && successfullyProcessed == totalCount) { // do not remove dirs if not all files were wiped
-        // This operation does not participate in resulting messageBox
-        // beacuse elements of "names" could be subdirs of each other
-        // and failing deleting them should not be considered as errors
-        for (const auto& n : names) {
-            QFileInfo fi(n.c_str());
-            if (fi.exists() && fi.isDir()) {
-                QDir d(n.c_str());
-                d.removeRecursively();
+
+        waitDlg.init(totalCount);
+        //waitDlg.show();
+        unprocessedSrcNames.clear();
+        const unsigned int successfullyProcessed = processItems(names, unprocessedSrcNames, memberFn);
+
+        if (operation == Operation::Wipe && successfullyProcessed == totalCount) { // do not remove dirs if not all files were wiped
+            // This operation does not participate in resulting messageBox
+            // beacuse elements of "names" could be subdirs of each other
+            // and failing deleting them should not be considered as errors
+            for (const auto& n : names) {
+                QFileInfo fi(n.c_str());
+                if (fi.exists() && fi.isDir()) {
+                    QDir d(n.c_str());
+                    d.removeRecursively();
+                }
             }
         }
-    }
-    waitDlg.hide();
+        waitDlg.hide();
 
-    QMessageBox m;
-    m.setText(QString("Operation finished. Total files processed: %1 of %2").arg(successfullyProcessed).arg(totalCount));
-    m.setIcon(QMessageBox::Icon::Information);
-    m.setWindowTitle("Operation finished");
-    m.setStandardButtons(QMessageBox::StandardButton::Ok);
-    m.exec();
+        QMessageBox m;
+        m.setText(QString("Operation finished. Total files processed: %1 of %2").arg(successfullyProcessed).arg(totalCount));
+        m.setIcon(QMessageBox::Information);
+        m.setWindowTitle("Operation finished");
+        m.setStandardButtons(QMessageBox::StandardButton::Ok);
+        m.exec();
+    } catch (std::exception& e) {
+        if (waitDlg.isVisible())
+            waitDlg.hide();
+        QMessageBox m;
+        m.setText("Error: " + QString(e.what()));
+        m.setIcon(QMessageBox::Critical);
+        m.setWindowTitle("Operation finished");
+        m.setStandardButtons(QMessageBox::StandardButton::Ok);
+        m.exec();
+    }
 }
 
 void MainWindow::onEncryptSelected() {
@@ -319,7 +375,11 @@ bool MainWindow::doDecrypt(const std::string& infile) {
             fileOpOutName = infile; // names are coincident
         }
 
-        fileOperations.emplace_back(FileOperation(infile, fileOpOutName, sz, timestamp));
+        if (std::find_if(fileOperations.begin(), fileOperations.end(), [&infile](const FileOperation& o)->bool {
+               return o.sourcePathName == infile;
+            }) == fileOperations.end()) {
+            fileOperations.emplace_back(FileOperation(infile, fileOpOutName, sz, timestamp));
+        }
     } catch (std::exception&) {
         res = false;
     }

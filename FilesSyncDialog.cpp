@@ -23,7 +23,7 @@ FilesSyncDialog::FilesSyncDialog(QWidget *parent)
     connect(ui->bnDiscard, &QPushButton::clicked, this, [=]() {
         emit discardAllFiles();
         QDialog::accept(); });
-    connect(ui->bnBackToMain, &QPushButton::clicked, this, [=]() { QDialog::reject(); });
+    connect(ui->bnBackToMain, &QPushButton::clicked, this, [=]() { /*QDialog::reject();*/QDialog::accept(); });
 
     ui->tableWidget->insertColumn(ColumnCheckBox);
     ui->tableWidget->insertColumn(ColumnSourceFileName);

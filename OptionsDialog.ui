@@ -9,12 +9,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
+    <width>649</width>
     <height>496</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Preferences</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout_6" rowstretch="1,0,0,0">
    <item row="0" column="0">
@@ -26,7 +29,7 @@
       <item row="0" column="0">
        <widget class="QRadioButton" name="rbKbd">
         <property name="text">
-         <string>Keyboard</string>
+         <string>Keyboard - ask for password</string>
         </property>
        </widget>
       </item>
@@ -45,7 +48,7 @@
         <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout" columnstretch="1,4,1">
+        <layout class="QGridLayout" name="gridLayout" columnstretch="1,8,1">
          <item row="0" column="0">
           <spacer name="horizontalSpacer">
            <property name="orientation">
@@ -63,7 +66,7 @@
           <widget class="QLineEdit" name="leKeyFile"/>
          </item>
          <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="bnBrowseKey">
            <property name="text">
             <string>...</string>
            </property>
@@ -97,14 +100,14 @@
         </property>
        </spacer>
       </item>
-      <item row="0" column="1">
+      <item row="0" column="2">
        <widget class="QPushButton" name="bnCancel">
         <property name="text">
          <string>Cancel</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item row="0" column="1">
        <widget class="QPushButton" name="bnOk">
         <property name="text">
          <string>OK</string>
@@ -123,7 +126,7 @@
       <item row="0" column="0">
        <widget class="QRadioButton" name="rbNone">
         <property name="text">
-         <string>None</string>
+         <string>None - use regular deleting</string>
         </property>
        </widget>
       </item>
@@ -142,7 +145,7 @@
         <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,4,1">
+        <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,8,1">
          <item row="0" column="0">
           <spacer name="horizontalSpacer_2">
            <property name="orientation">
@@ -160,7 +163,7 @@
           <widget class="QLineEdit" name="leWipeProgram"/>
          </item>
          <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_2">
+          <widget class="QPushButton" name="bnBrowseWipingProg">
            <property name="text">
             <string>...</string>
            </property>
@@ -181,7 +184,7 @@
       <item row="0" column="0">
        <widget class="QRadioButton" name="rbSame">
         <property name="text">
-         <string>Same as source (in-place)</string>
+         <string>Same as source - in-place decryption</string>
         </property>
        </widget>
       </item>
@@ -200,7 +203,7 @@
         <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
-        <layout class="QGridLayout" name="gridLayout_8" columnstretch="1,4,1">
+        <layout class="QGridLayout" name="gridLayout_8" columnstretch="1,8,1">
          <item row="0" column="0">
           <spacer name="horizontalSpacer_4">
            <property name="orientation">
@@ -218,7 +221,7 @@
           <widget class="QLineEdit" name="leDecryptFolder"/>
          </item>
          <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="bnBrowseDercyptFolder">
            <property name="text">
             <string>...</string>
            </property>

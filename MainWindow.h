@@ -40,7 +40,8 @@ private:
     void onCustomContextMenu(const QPoint& point);
     QMenu contextMenu;
 
-    void updateKeys();
+    bool updateKeys();
+    void updateKeyIv(std::string keyStr);
 
     enum class Operation {
         Encrypt,
@@ -72,6 +73,7 @@ private:
     void closeEvent(QCloseEvent* event);
 
     void spawnFileViewer(const std::string& fileName);
+
 public slots:
     void onMarkForProcess(const std::string& encryptedName);
     void onFilesOpEncryptedSelected(std::vector<std::string>& unprocessedSrcNames);

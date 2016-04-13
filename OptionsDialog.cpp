@@ -1,6 +1,7 @@
 #include "OptionsDialog.h"
 #include "ui_OptionsDialog.h"
 #include <QMessageBox>
+#include <QFileDialog>
 
 OptionsDialog::OptionsDialog(Options& options)
     : QDialog(), ui(new Ui::OptionsDialog), options(options) {
@@ -8,6 +9,22 @@ OptionsDialog::OptionsDialog(Options& options)
     connect(ui->rbFile, &QRadioButton::toggled, this, [=](bool toggled){ui->frameKeyFile->setEnabled(toggled);});
     connect(ui->rbExt, &QRadioButton::toggled, this, [=](bool toggled){ui->frameWipeProgram->setEnabled(toggled);});
     connect(ui->rbFolder, &QRadioButton::toggled, this, [=](bool toggled){ui->frameDecryptFolder->setEnabled(toggled);});
+
+    connect(ui->bnBrowseKey, &QPushButton::clicked, [=]() {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Key file"), nullptr, nullptr, nullptr, QFileDialog::DontResolveSymlinks);
+        if (fileName.length() > 0)
+            ui->leKeyFile->setText(fileName);
+    });
+    connect(ui->bnBrowseWipingProg, &QPushButton::clicked, [=]() {
+        QString fileName = QFileDialog::getOpenFileName(this, tr("Wiping program"), nullptr, nullptr, nullptr, QFileDialog::DontResolveSymlinks);
+        if (fileName.length() > 0)
+            ui->leWipeProgram->setText(fileName);
+    });
+    connect(ui->bnBrowseDercyptFolder, &QPushButton::clicked, [=]() {
+        QString dir = QFileDialog::getExistingDirectory(this, tr("Decryption folder"), nullptr, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+        if (dir.length() > 0)
+            ui->leDecryptFolder->setText(dir);
+    });
 
     connect(ui->bnCancel, &QPushButton::clicked, this, [=](){close();});
     connect(ui->bnOk, &QPushButton::clicked, this, &OptionsDialog::onOkClick);
