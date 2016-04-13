@@ -13,6 +13,8 @@
 #include <QCloseEvent>
 #include <QShortcut>
 #include <QDesktopServices>
+#include "ViewFileDialog.h"
+#include <QDesktopWidget>
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
@@ -29,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionEncrypt_selected, &QAction::triggered, this, &MainWindow::onEncryptSelected);
     connect(ui->actionDecrypt_selected, &QAction::triggered, this, &MainWindow::onDecryptSelected);
     connect(ui->actionWipe_selected, &QAction::triggered, this, &MainWindow::onWipeSelected);
-
     connect(ui->actionOptions, &QAction::triggered, this, &MainWindow::onOptionsClick);
 
     optionsDlg.hide();
@@ -62,13 +63,22 @@ MainWindow::MainWindow(QWidget *parent) :
     // These shortcuts will be deleted automatically on app exit
     new QShortcut(QKeySequence(Qt::Key_F1), this, SLOT(onEncryptSelected()));
     new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(onDecryptSelected()));
-    //new QShortcut(QKeySequence(Qt::Key_F3), this, SLOT(onViewSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F3), this, SLOT(onViewSelected()));
     new QShortcut(QKeySequence(Qt::Key_F4), this, SLOT(onExecuteSelected()));
     new QShortcut(QKeySequence(Qt::Key_F5), this, SLOT(onShowDecrypted()));
     new QShortcut(QKeySequence(Qt::Key_F6), this, SLOT(onSetAsRoot()));
     new QShortcut(QKeySequence(Qt::Key_F8), this, SLOT(onWipeSelected()));
     new QShortcut(QKeySequence(Qt::Key_F9), this, SLOT(onOptionsClick()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_PageUp), this, SLOT(onUpOneLevelClick()));
+
+    connect(ui->bnF1Encrypt,       &QPushButton::clicked, this, &MainWindow::onEncryptSelected);
+    connect(ui->bnF2Decrypt,       &QPushButton::clicked, this, &MainWindow::onDecryptSelected);
+    connect(ui->bnF3View,          &QPushButton::clicked, this, &MainWindow::onViewSelected);
+    connect(ui->bnF4Execute,       &QPushButton::clicked, this, &MainWindow::onExecuteSelected);
+    connect(ui->bnF5ShowDecrypted, &QPushButton::clicked, this, &MainWindow::onShowDecrypted);
+    connect(ui->bnF6SetAsRoot,     &QPushButton::clicked, this, &MainWindow::onSetAsRoot);
+    connect(ui->bnF8Wipe,          &QPushButton::clicked, this, &MainWindow::onWipeSelected);
+    connect(ui->bnF9Options,       &QPushButton::clicked, this, &MainWindow::onOptionsClick);
 }
 
 MainWindow::~MainWindow() {
@@ -90,6 +100,46 @@ void MainWindow::onCustomContextMenu(const QPoint& point) {
     QModelIndex index = ui->treeView->indexAt(point);
     if (index.isValid())
         contextMenu.exec(ui->treeView->mapToGlobal(point));
+}
+
+void MainWindow::spawnFileViewer(const std::string& fileName) {
+    ViewFileDialog* d = new ViewFileDialog(/*this*/);
+    d->setAttribute(Qt::WA_DeleteOnClose);
+
+    d->setWindowTitle(fileName.c_str());
+    {
+        const QRect desktopRect = QApplication::desktop()->screenGeometry();
+        const int w = desktopRect.width() / 3;
+        const int h = desktopRect.height() / 1.5;
+
+        // Adding shifting to window pos to avoid complete
+        // overlapping if previous was not moved anywhere
+        const int shiftPx = 24;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(-5, 5);
+        const int wcx = dis(gen) * shiftPx;
+        const int wcy = dis(gen) * shiftPx;
+
+        d->setGeometry((desktopRect.right() - desktopRect.left()) / 2 - w / 2 + wcx,
+                      (desktopRect.bottom() - desktopRect.top()) / 2 - h / 2 + wcy,
+                       w, h);
+    }
+
+    QFile f(fileName.c_str());
+    if (f.open(QFile::ReadOnly)) {
+        QByteArray b = f.readAll();
+        f.close();
+        d->setText(b);
+    }
+
+    d->show();
+}
+
+void MainWindow::onViewSelected() {
+    QModelIndex m = ui->treeView->currentIndex();
+    if (m.isValid())
+        spawnFileViewer(model()->filePath(m).toStdString());
 }
 
 void MainWindow::onExecuteSelected() {
@@ -211,7 +261,7 @@ void MainWindow::onWipeSelected() {
     m.setText("You are about to wipe file(s). Note that this is potentially irreversible operation. Are you sure you want to proceed?");
     m.setWindowTitle("Confirmation");
     m.setIcon(QMessageBox::Warning);
-    m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    m.setStandardButtons(QMessageBox::No | QMessageBox::Yes);
     m.setDefaultButton(QMessageBox::No);
     if (m.exec() == QMessageBox::Yes)
         processOperation(Operation::Wipe);

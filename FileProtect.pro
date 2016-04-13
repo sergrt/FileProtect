@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     WaitDialog.cpp \
     FileOperation.cpp \
     FilesSyncDialog.cpp \
-    CryptoppUtils.cpp
+    CryptoppUtils.cpp \
+    ViewFileDialog.cpp
 
 HEADERS  += MainWindow.h \
     OptionsDialog.h \
@@ -28,13 +29,15 @@ HEADERS  += MainWindow.h \
     WaitDialog.h \
     FileOperation.h \
     FilesSyncDialog.h \
-    CryptoppUtils.h
+    CryptoppUtils.h \
+    ViewFileDialog.h
 
 
 FORMS    += MainWindow.ui \
     OptionsDialog.ui \
     WaitDialog.ui \
-    FilesSyncDialog.ui
+    FilesSyncDialog.ui \
+    ViewFileDialog.ui
 
 
 LIBS += -L$$PWD/../cryptopp/ -lcryptopp

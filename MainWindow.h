@@ -28,6 +28,7 @@ private:
 public slots:
     void onEncryptSelected();
     void onDecryptSelected();
+    void onViewSelected();
     void onExecuteSelected();
     void onShowDecrypted();
     void onSetAsRoot();
@@ -69,6 +70,8 @@ private:
     // bySourcePath == false -> name = destinationFileName
     void removeFromFileOps(const std::string& name, bool bySourcePath);
     void closeEvent(QCloseEvent* event);
+
+    void spawnFileViewer(const std::string& fileName);
 public slots:
     void onMarkForProcess(const std::string& encryptedName);
     void onFilesOpEncryptedSelected(std::vector<std::string>& unprocessedSrcNames);
