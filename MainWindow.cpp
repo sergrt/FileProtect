@@ -17,6 +17,7 @@
 #include <QDesktopWidget>
 #include <InputKeyDialog.h>
 #include "../cryptopp/sha.h"
+#include <random>
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
@@ -238,6 +239,9 @@ void MainWindow::onRootPathChanged(const QString &newPath) {
 
 void MainWindow::processOperation(Operation operation) {
     try {
+        if (operation != Operation::Wipe && !updateKeys())
+            throw std::logic_error("Unable to obtain key");
+
         waitDlg.init(0);
         waitDlg.show();
         std::vector<std::string> names;
@@ -250,24 +254,18 @@ void MainWindow::processOperation(Operation operation) {
         const unsigned int totalCount = processItems(names, unprocessedSrcNames, &MainWindow::doCount);
         //waitDlg.hide();
 
-
         bool (MainWindow::*memberFn)(const std::string&) = nullptr;
         switch (operation) {
         case Operation::Encrypt:
             memberFn = &MainWindow::doEncrypt;
-            if (!updateKeys())
-                throw std::logic_error("Unable to obtain key");
             break;
         case Operation::Decrypt:
             memberFn = &MainWindow::doDecrypt;
-            if (!updateKeys())
-                throw std::logic_error("Unable to obtain key");
             break;
         case Operation::Wipe:
             memberFn = &MainWindow::doRemove;
             break;
         }
-
 
         waitDlg.init(totalCount);
         //waitDlg.show();
@@ -328,7 +326,7 @@ bool MainWindow::doEncrypt(const std::string& infile) {
 
     try {
         CryptoPP::CTR_Mode<CryptoPP::AES>::Encryption aes(key, key.size(), iv);
-        std::string outfile = infile + ".aes";
+        std::string outfile = infile + "~aes";
         CryptoPP::FileSource(infile.c_str(), true, new CryptoPP::StreamTransformationFilter(aes, new CryptoPP::FileSink(outfile.c_str())));
 
         if (!doRemove(infile) || !QFile::rename(outfile.c_str(), infile.c_str()))
@@ -357,7 +355,7 @@ bool MainWindow::doDecrypt(const std::string& infile) {
 
             outfile = d.absolutePath().toStdString() + "/" + filename.toStdString();
         } else {
-            outfile += ".dec";
+            outfile += "~dec";
         }
         CryptoPP::CTR_Mode<CryptoPP::AES>::Decryption aes(key, key.size(), iv);
         CryptoPP::FileSource(infile.c_str(), true, new CryptoPP::StreamTransformationFilter(aes, new CryptoPP::FileSink(outfile.c_str())));
@@ -539,8 +537,17 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcN
 
     // removing encrypted files from filesOperations list
     for (const auto& n : names) {
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
+        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end()) {
             removeFromFileOps(n, false);
+            // remove dir
+            /*
+            QFileInfo fi(n.c_str());
+            if (fi.exists() && fi.isDir()) {
+                QDir d(n.c_str());
+                d.removeRecursively();
+            }
+            */
+        }
     }
 }
 

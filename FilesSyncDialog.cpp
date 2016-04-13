@@ -8,6 +8,8 @@
 const QString textDifY = "Y";
 const QString textDifN = "N";
 
+#include <QFontDataBase>
+
 FilesSyncDialog::FilesSyncDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::FilesSyncDialog) {
     ui->setupUi(this);
@@ -40,11 +42,18 @@ FilesSyncDialog::FilesSyncDialog(QWidget *parent)
     ui->tableWidget->setHorizontalHeaderLabels(header);
 
     const int w = this->width();
-    ui->tableWidget->setColumnWidth(ColumnCheckBox,        0.1*w);
-    ui->tableWidget->setColumnWidth(ColumnSourceFileName,  0.5*w);
+    ui->tableWidget->setColumnWidth(ColumnCheckBox,        0.04*w);
+    ui->tableWidget->setColumnWidth(ColumnSourceFileName,  0.6*w);
     //ui->tableWidget->setColumnWidth(ColumnInitialFileSize, 0.2*w);
     ui->tableWidget->setColumnWidth(ColumnDifSize,         0.1*w);
     ui->tableWidget->setColumnWidth(ColumnDifTime,         0.1*w);
+
+    const QFont fixedFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    ui->tableWidget->setFont(fixedFont);
+    QFontInfo fnt(ui->tableWidget->font());
+
+    ui->tableWidget->verticalHeader()->sectionResizeMode(QHeaderView::Fixed);
+    ui->tableWidget->verticalHeader()->setDefaultSectionSize(fnt.pixelSize() + 6);
 }
 
 FilesSyncDialog::~FilesSyncDialog() {
@@ -108,7 +117,6 @@ void FilesSyncDialog::push_back(const FileOperation &op) {
         for (int i = 0; i < ui->tableWidget->columnCount(); ++i)
            ui->tableWidget->item(row, i)->setBackgroundColor(color);
     }
-
 }
 
 void FilesSyncDialog::clear() {
