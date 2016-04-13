@@ -43,11 +43,22 @@ private:
     void onSelNoneClick();
 
     void onEncryptSelClick();
+    void onWipeSelClick();
+
+    // Updates MainWindow's fileOperations - sets 'true' to process checked files
+    // Returns number of updated fileOperations
+    int updateFileOperations();
+    void showNoFilesSelectedMsg() const;
+    void showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const;
 signals:
-    // sets FileOperation field to restore particular item
-    void setRestoreEncrypted(const std::string& encryptedName);
-    // restores all encrypted files with restore flag
-    void restoreEncrypted();
+    // sets FileOperation field to process particular item
+    void setMarkForProcess(const std::string& encryptedName);
+    // restores selected encrypted files with restore flag
+    void restoreEncryptedSelected(std::vector<std::string>& unprocessedSrcNames);
+    // discards all file changes
+    void discardAllFiles();
+    // wipes selected files
+    void wipeSelected(std::vector<std::string>& unprocessedSrcNames);
 };
 
 #endif // FILESSYNCDIALOG_H

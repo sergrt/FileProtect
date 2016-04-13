@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QDateTime>
+#include <QMessageBox>
 
 const QString textDifY = "Y";
 const QString textDifN = "N";
@@ -17,8 +18,11 @@ FilesSyncDialog::FilesSyncDialog(QWidget *parent)
     connect(ui->bnSelNone, &QPushButton::clicked, this, &FilesSyncDialog::onSelNoneClick);
 
     connect(ui->bnEncryptSel, &QPushButton::clicked, this, &FilesSyncDialog::onEncryptSelClick);
+    connect(ui->bnWipeSel, &QPushButton::clicked, this, &FilesSyncDialog::onWipeSelClick);
 
-    connect(ui->bnDiscard, &QPushButton::clicked, this, [=]() { QDialog::accept(); });
+    connect(ui->bnDiscard, &QPushButton::clicked, this, [=]() {
+        emit discardAllFiles();
+        QDialog::accept(); });
     connect(ui->bnBackToMain, &QPushButton::clicked, this, [=]() { QDialog::reject(); });
 
     ui->tableWidget->insertColumn(ColumnCheckBox);
@@ -160,12 +164,66 @@ void FilesSyncDialog::onSelNoneClick() {
         ui->tableWidget->item(row, ColumnCheckBox)->setCheckState(Qt::Unchecked);
 }
 
-void FilesSyncDialog::onEncryptSelClick() {
+int FilesSyncDialog::updateFileOperations() {
+    int res = 0;
     const int rowCount = ui->tableWidget->rowCount();
     for (int row = 0; row < rowCount; ++row) {
-        if (ui->tableWidget->item(row, ColumnCheckBox)->checkState() == Qt::Checked)
-            emit setRestoreEncrypted(ui->tableWidget->item(row, ColumnSourceFileName)->text().toStdString());
+        if (ui->tableWidget->item(row, ColumnCheckBox)->checkState() == Qt::Checked) {
+            emit setMarkForProcess(ui->tableWidget->item(row, ColumnSourceFileName)->text().toStdString());
+            ++res;
+        }
     }
-    emit restoreEncrypted();
-    QDialog::accept();
+    return res;
+}
+
+void FilesSyncDialog::onEncryptSelClick() {
+    if (updateFileOperations() > 0) {
+        std::vector<std::string> unprocessedSrcNames;
+        emit restoreEncryptedSelected(unprocessedSrcNames);
+        showResultMsg(unprocessedSrcNames);
+    } else {
+        showNoFilesSelectedMsg();
+    }
+}
+
+void FilesSyncDialog::onWipeSelClick() {
+    if (updateFileOperations() > 0) {
+        std::vector<std::string> unprocessedSrcNames;
+        emit wipeSelected(unprocessedSrcNames);
+        showResultMsg(unprocessedSrcNames);
+    } else {
+        showNoFilesSelectedMsg();
+    }
+}
+void FilesSyncDialog::showNoFilesSelectedMsg() const {
+    QMessageBox m;
+    m.setText("No files selected");
+    m.setIcon(QMessageBox::Information);
+    m.setWindowTitle("Unable to proceed");
+    m.exec();
+}
+
+void FilesSyncDialog::showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const {
+    QMessageBox m;
+    m.setWindowTitle("Operation summary");
+    QString msgText;
+
+    if (unprocessedSrcNames.size() > 0) {
+        msgText = QString("Error processing files. %1 file(s) left unprocessed").arg(unprocessedSrcNames.size());
+        const size_t maxFilesToOutput = 10;
+        const size_t maxCount = std::min(maxFilesToOutput, unprocessedSrcNames.size());
+        for (std::size_t i = 0; i < maxCount; ++i)
+            msgText += (std::string("\n\t") + unprocessedSrcNames[i]).c_str();
+
+        if (maxCount < unprocessedSrcNames.size())
+            msgText += "\n\t...";
+
+        m.setIcon(QMessageBox::Warning);
+        m.exec();
+    } else {
+        msgText = "Operation completed";
+        m.setIcon(QMessageBox::Information);
+    }
+    m.setText(msgText);
+    m.exec();
 }

@@ -14,6 +14,6 @@ struct FileOperation {
     unsigned long initialFileSize;
     time_t initialModificationTime;
 
-    bool restoreEncrypted = false;
+    bool processItem = false;
 };
 

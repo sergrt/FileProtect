@@ -40,7 +40,7 @@
    <item row="3" column="4">
     <widget class="QPushButton" name="bnEncryptSel">
      <property name="text">
-      <string>Encrypt selected &amp;&amp; close</string>
+      <string>Encrypt selected</string>
      </property>
     </widget>
    </item>

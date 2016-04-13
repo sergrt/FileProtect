@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>840</width>
-    <height>441</height>
+    <width>995</width>
+    <height>466</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,6 +29,74 @@
       </property>
      </widget>
     </item>
+    <item row="2" column="0">
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="4">
+        <widget class="QPushButton" name="bnF5ShowDecrypted">
+         <property name="text">
+          <string>F5 Show decrypted</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="bnF3View">
+         <property name="text">
+          <string>F3 View</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QPushButton" name="bnF1Encrypt">
+         <property name="text">
+          <string>F1 Encrypt</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="bnF2Decrypt">
+         <property name="text">
+          <string>F2 Decrypt</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="6">
+        <widget class="QPushButton" name="bnF8Wipe">
+         <property name="text">
+          <string>F8 Wipe</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QPushButton" name="bnF4Execute">
+         <property name="text">
+          <string>F4 Execute</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="7">
+        <widget class="QPushButton" name="bnF9Options">
+         <property name="text">
+          <string>F9 Options</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="5">
+        <widget class="QPushButton" name="bnF6SetAsRoot">
+         <property name="text">
+          <string>F6 Set as root</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -36,7 +104,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>840</width>
+     <width>995</width>
      <height>20</height>
     </rect>
    </property>

@@ -11,6 +11,8 @@
 #include "CryptoppUtils.h"
 #include <algorithm>
 #include <QCloseEvent>
+#include <QShortcut>
+#include <QDesktopServices>
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
@@ -49,17 +51,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
     waitDlg.hide();
 
-    connect(ui->actionShow_decrypted, &QAction::triggered, this, [=]() {
-        syncDlg.clear();
-        for (const auto& op : fileOperations)
-            syncDlg.push_back(op);
-        if (syncDlg.exec() == QDialog::Rejected)
-            fileOperations.clear();
-    });
+    connect(ui->actionShow_decrypted, &QAction::triggered, this, &MainWindow::onShowDecrypted);
 
 
-    connect(&syncDlg, &FilesSyncDialog::setRestoreEncrypted, this, &MainWindow::onSetRestoreEncrypted);
-    connect(&syncDlg, &FilesSyncDialog::restoreEncrypted, this, &MainWindow::onRestoreEncrypted);
+    connect(&syncDlg, &FilesSyncDialog::setMarkForProcess, this, &MainWindow::onMarkForProcess);
+    connect(&syncDlg, &FilesSyncDialog::restoreEncryptedSelected, this, &MainWindow::onFilesOpEncryptedSelected);
+    connect(&syncDlg, &FilesSyncDialog::wipeSelected, this, &MainWindow::onFilesOpWipeSelected);
+    connect(&syncDlg, &FilesSyncDialog::discardAllFiles, this, &MainWindow::onDiscardAllFiles);
+
+    // These shortcuts will be deleted automatically on app exit
+    new QShortcut(QKeySequence(Qt::Key_F1), this, SLOT(onEncryptSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(onDecryptSelected()));
+    //new QShortcut(QKeySequence(Qt::Key_F3), this, SLOT(onViewSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F4), this, SLOT(onExecuteSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F5), this, SLOT(onShowDecrypted()));
+    new QShortcut(QKeySequence(Qt::Key_F6), this, SLOT(onSetAsRoot()));
+    new QShortcut(QKeySequence(Qt::Key_F8), this, SLOT(onWipeSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F9), this, SLOT(onOptionsClick()));
+    new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_PageUp), this, SLOT(onUpOneLevelClick()));
 }
 
 MainWindow::~MainWindow() {
@@ -81,6 +90,18 @@ void MainWindow::onCustomContextMenu(const QPoint& point) {
     QModelIndex index = ui->treeView->indexAt(point);
     if (index.isValid())
         contextMenu.exec(ui->treeView->mapToGlobal(point));
+}
+
+void MainWindow::onExecuteSelected() {
+    QDesktopServices::openUrl(QUrl(model()->filePath(ui->treeView->currentIndex())));
+}
+
+void MainWindow::onShowDecrypted() {
+    syncDlg.clear();
+    for (const auto& op : fileOperations)
+        syncDlg.push_back(op);
+    if (syncDlg.exec() == QDialog::Rejected)
+        fileOperations.clear();
 }
 
 void MainWindow::onUpOneLevelClick() {
@@ -186,7 +207,15 @@ void MainWindow::onDecryptSelected() {
     processOperation(Operation::Decrypt);
 }
 void MainWindow::onWipeSelected() {
-    processOperation(Operation::Wipe);
+    QMessageBox m;
+    m.setText("You are about to wipe file(s). Note that this is potentially irreversible operation. Are you sure you want to proceed?");
+    m.setWindowTitle("Confirmation");
+    m.setIcon(QMessageBox::Warning);
+    m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    m.setDefaultButton(QMessageBox::No);
+    if (m.exec() == QMessageBox::Yes)
+        processOperation(Operation::Wipe);
+
 }
 bool MainWindow::doEncrypt(const std::string& infile) {
     bool res = true;
@@ -199,7 +228,7 @@ bool MainWindow::doEncrypt(const std::string& infile) {
         if (!doRemove(infile) || !QFile::rename(outfile.c_str(), infile.c_str()))
             throw std::runtime_error("Error file removing/renaming");
 
-        removeFromFileOps(infile);
+        removeFromFileOps(infile, true);
     } catch (std::exception&) {
         res = false;
     }
@@ -248,7 +277,7 @@ bool MainWindow::doDecrypt(const std::string& infile) {
     return res;
 }
 
-bool MainWindow::doCount(const std::string& fileName) {
+bool MainWindow::doCount(const std::string&/* fileName*/) {
     return true;
 }
 
@@ -263,6 +292,8 @@ bool MainWindow::doRemove(const std::string& fileName) {
         if (!p.waitForFinished())
             res = false;
     }
+    if (res)
+        removeFromFileOps(fileName, true);
 
     return res;
 }
@@ -307,31 +338,33 @@ void MainWindow::closeEvent(QCloseEvent* event) {
             event->ignore();
     }
 }
-void MainWindow::onSetRestoreEncrypted(const std::string& encryptedName) {
+void MainWindow::onMarkForProcess(const std::string& encryptedName) {
     for (auto& op : fileOperations) {
         if (encryptedName == op.sourcePathName)
-            op.restoreEncrypted = true;
+            op.processItem = true;
     }
 }
 
-void MainWindow::onRestoreEncrypted() {
+void MainWindow::onFilesOpEncryptedSelected(std::vector<std::string>& unprocessedSrcNames) {
     std::vector<std::string> names;
     std::vector<std::string> namesToReplace;
     for (const auto& op : fileOperations) {
-        if (op.restoreEncrypted) {
+        if (op.processItem) {
             names.emplace_back(op.destinationPathName);
             namesToReplace.emplace_back(op.sourcePathName);
         }
     }
-    std::vector<std::string> unprocessedSrcNames;
+    //std::vector<std::string> unprocessedSrcNames;
+    unprocessedSrcNames.clear();
     /*int processedCount = */processItems(names, unprocessedSrcNames, &MainWindow::doEncrypt);
 
     // removing encrypted files from filesOperations list
     for (const auto& n : namesToReplace) {
         if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
-            removeFromFileOps(n);
+            removeFromFileOps(n, true);
     }
 
+    /*
     std::size_t filesLeft = names.size();
     for (std::size_t i = 0; i < names.size(); ++i) {
         if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), namesToReplace[i]) == unprocessedSrcNames.end()) {
@@ -346,19 +379,31 @@ void MainWindow::onRestoreEncrypted() {
             }
         }
     }
-
-    if (filesLeft != 0) {
-        QMessageBox m;
-        QString msgText = QString("Error restoring files. %1 file(s) left in unencrypted state and %2 in unremoved state:")
-                .arg(unprocessedSrcNames.size()).arg(filesLeft);
-        m.setText(msgText);
-        m.exec();
+    */
+    // delete and rename processed files. If this operation fails, put file in unprocessed vector
+    std::size_t filesLeft = names.size();
+    for (std::size_t i = 0; i < names.size(); ++i) {
+        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), namesToReplace[i]) == unprocessedSrcNames.end()) {
+            // file was successfully encrypted, now it's time to restore its path if necessary
+            if (names[i] == namesToReplace[i]) {
+                --filesLeft;
+            } else {
+                QFile f(names[i].c_str());
+                QFile d(namesToReplace[i].c_str());
+                if (d.remove() && QFile::rename(names[i].c_str(), namesToReplace[i].c_str()))
+                    --filesLeft;
+                else
+                    unprocessedSrcNames.push_back(namesToReplace[i]);
+            }
+        }
     }
 }
 
-void MainWindow::removeFromFileOps(const std::string& sourceName) {
+void MainWindow::removeFromFileOps(const std::string& name, bool bySourcePath) {
+
     for (std::size_t i = 0; i < fileOperations.size(); ++i) {
-        if (fileOperations[i].sourcePathName == sourceName) {
+        const std::string opFileName = bySourcePath ? fileOperations[i].sourcePathName : fileOperations[i].destinationPathName;
+        if (opFileName == name) {
             FileOperation tmp(std::move(fileOperations[i]));
             fileOperations.erase(fileOperations.begin() + i);
             syncDlg.remove(tmp);
@@ -366,3 +411,26 @@ void MainWindow::removeFromFileOps(const std::string& sourceName) {
         }
     }
 }
+
+void MainWindow::onDiscardAllFiles() {
+    fileOperations.clear();
+    syncDlg.clear();
+}
+
+void MainWindow::onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcNames) {
+    std::vector<std::string> names;
+    for (const auto& op : fileOperations) {
+        if (op.processItem)
+            names.emplace_back(op.destinationPathName);
+    }
+    //std::vector<std::string> unprocessedSrcNames;
+    unprocessedSrcNames.clear();
+    /*const int processedCount = */processItems(names, unprocessedSrcNames, &MainWindow::doRemove);
+
+    // removing encrypted files from filesOperations list
+    for (const auto& n : names) {
+        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
+            removeFromFileOps(n, false);
+    }
+}
+

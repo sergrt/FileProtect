@@ -10,7 +10,7 @@ FileOperation::FileOperation(FileOperation&& op) {
     std::swap(destinationPathName, op.destinationPathName);
     std::swap(initialFileSize, op.initialFileSize);
     std::swap(initialModificationTime, op.initialModificationTime);
-    std::swap(restoreEncrypted, op.restoreEncrypted);
+    std::swap(processItem, op.processItem);
 }
 
 FileOperation& FileOperation::operator=(const FileOperation& op) {
@@ -18,7 +18,7 @@ FileOperation& FileOperation::operator=(const FileOperation& op) {
     this->destinationPathName = op.destinationPathName;
     this->initialFileSize = op.initialFileSize;
     this->initialModificationTime = op.initialModificationTime;
-    this->restoreEncrypted = op.restoreEncrypted;
+    this->processItem = op.processItem;
 
     return *this;
 }

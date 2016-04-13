@@ -25,13 +25,17 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    void onUpOneLevelClick();
-    void onSetAsRoot();
-    void onRootPathChanged(const QString& newPath);
+public slots:
     void onEncryptSelected();
     void onDecryptSelected();
+    void onExecuteSelected();
+    void onShowDecrypted();
+    void onSetAsRoot();
     void onWipeSelected();
     void onOptionsClick();
+    void onUpOneLevelClick();
+private:
+    void onRootPathChanged(const QString& newPath);
     void onCustomContextMenu(const QPoint& point);
     QMenu contextMenu;
 
@@ -60,11 +64,16 @@ private:
     FilesSyncDialog syncDlg;
 
     std::vector<FileOperation> fileOperations;
-    void removeFromFileOps(const std::string& sourceName);
+    // removes indicated file from fileOperations and from syncDlg.
+    // bySourcePath == true -> name = sourceFileName
+    // bySourcePath == false -> name = destinationFileName
+    void removeFromFileOps(const std::string& name, bool bySourcePath);
     void closeEvent(QCloseEvent* event);
 public slots:
-    void onSetRestoreEncrypted(const std::string& encryptedName);
-    void onRestoreEncrypted();
+    void onMarkForProcess(const std::string& encryptedName);
+    void onFilesOpEncryptedSelected(std::vector<std::string>& unprocessedSrcNames);
+    void onDiscardAllFiles();
+    void onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcNames);
 };
 
 #endif // MAINWINDOW_H
