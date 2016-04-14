@@ -8,7 +8,7 @@
 const QString textDifY = "Y";
 const QString textDifN = "N";
 
-#include <QFontDataBase>
+#include <QFontDatabase>
 
 FilesSyncDialog::FilesSyncDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::FilesSyncDialog) {

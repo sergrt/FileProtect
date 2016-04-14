@@ -18,6 +18,7 @@
 #include <InputKeyDialog.h>
 #include "../cryptopp/sha.h"
 #include <random>
+#include "AboutDialog.h"
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
@@ -64,24 +65,29 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&syncDlg, &FilesSyncDialog::discardAllFiles, this, &MainWindow::onDiscardAllFiles);
 
     // These shortcuts will be deleted automatically on app exit
-    new QShortcut(QKeySequence(Qt::Key_F1), this, SLOT(onEncryptSelected()));
-    new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(onDecryptSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F1), this, SLOT(onShowAbout()));
+    new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(onSetAsRoot()));
     new QShortcut(QKeySequence(Qt::Key_F3), this, SLOT(onViewSelected()));
     new QShortcut(QKeySequence(Qt::Key_F4), this, SLOT(onExecuteSelected()));
-    new QShortcut(QKeySequence(Qt::Key_F5), this, SLOT(onShowDecrypted()));
-    new QShortcut(QKeySequence(Qt::Key_F6), this, SLOT(onSetAsRoot()));
+    new QShortcut(QKeySequence(Qt::Key_F5), this, SLOT(onEncryptSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F6), this, SLOT(onDecryptSelected()));
+    new QShortcut(QKeySequence(Qt::Key_F7), this, SLOT(onShowDecrypted()));
     new QShortcut(QKeySequence(Qt::Key_F8), this, SLOT(onWipeSelected()));
     new QShortcut(QKeySequence(Qt::Key_F9), this, SLOT(onOptionsClick()));
     new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_PageUp), this, SLOT(onUpOneLevelClick()));
 
-    connect(ui->bnF1Encrypt,       &QPushButton::clicked, this, &MainWindow::onEncryptSelected);
-    connect(ui->bnF2Decrypt,       &QPushButton::clicked, this, &MainWindow::onDecryptSelected);
+    connect(ui->bnF2SetAsRoot,     &QPushButton::clicked, this, &MainWindow::onSetAsRoot);
     connect(ui->bnF3View,          &QPushButton::clicked, this, &MainWindow::onViewSelected);
     connect(ui->bnF4Execute,       &QPushButton::clicked, this, &MainWindow::onExecuteSelected);
-    connect(ui->bnF5ShowDecrypted, &QPushButton::clicked, this, &MainWindow::onShowDecrypted);
-    connect(ui->bnF6SetAsRoot,     &QPushButton::clicked, this, &MainWindow::onSetAsRoot);
+    connect(ui->bnF5Encrypt,       &QPushButton::clicked, this, &MainWindow::onEncryptSelected);
+    connect(ui->bnF6Decrypt,       &QPushButton::clicked, this, &MainWindow::onDecryptSelected);
+    connect(ui->bnF7ShowDecrypted, &QPushButton::clicked, this, &MainWindow::onShowDecrypted);
     connect(ui->bnF8Wipe,          &QPushButton::clicked, this, &MainWindow::onWipeSelected);
     connect(ui->bnF9Options,       &QPushButton::clicked, this, &MainWindow::onOptionsClick);
+    connect(ui->bnCtrlPgUpGoUp,    &QPushButton::clicked, this, &MainWindow::onUpOneLevelClick);
+
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onShowAbout);
+
 }
 
 MainWindow::~MainWindow() {
@@ -551,3 +557,11 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcN
     }
 }
 
+void MainWindow::onShowAbout() {
+    AboutDialog d;
+    //d.setAttribute(Qt::WA_DeleteOnClose);
+    d.setVersion(VERSION);
+
+    d.exec();
+
+}

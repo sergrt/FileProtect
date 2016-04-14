@@ -7,6 +7,9 @@
 QT       += core gui
 QMAKE_CXXFLAGS += -std=c++11
 
+VERSION = 0.8.5
+DEFINES += VERSION=\\\"$$VERSION\\\"
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = FileProtect
@@ -22,7 +25,8 @@ SOURCES += main.cpp\
     FilesSyncDialog.cpp \
     CryptoppUtils.cpp \
     ViewFileDialog.cpp \
-    InputKeyDialog.cpp
+    InputKeyDialog.cpp \
+    AboutDialog.cpp
 
 HEADERS  += MainWindow.h \
     OptionsDialog.h \
@@ -32,7 +36,8 @@ HEADERS  += MainWindow.h \
     FilesSyncDialog.h \
     CryptoppUtils.h \
     ViewFileDialog.h \
-    InputKeyDialog.h
+    InputKeyDialog.h \
+    AboutDialog.h
 
 
 FORMS    += MainWindow.ui \
@@ -40,7 +45,8 @@ FORMS    += MainWindow.ui \
     WaitDialog.ui \
     FilesSyncDialog.ui \
     ViewFileDialog.ui \
-    InputKeyDialog.ui
+    InputKeyDialog.ui \
+    AboutDialog.ui
 
 
 LIBS += -L$$PWD/../cryptopp/ -lcryptopp

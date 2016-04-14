@@ -35,6 +35,7 @@ public slots:
     void onWipeSelected();
     void onOptionsClick();
     void onUpOneLevelClick();
+    void onShowAbout();
 private:
     void onRootPathChanged(const QString& newPath);
     void onCustomContextMenu(const QPoint& point);
