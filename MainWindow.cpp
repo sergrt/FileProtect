@@ -124,6 +124,7 @@ bool MainWindow::updateKeys() {
 
         if (keyStr.size() > 0) {
             updateKeyIv(keyStr);
+            CryptoPP::SecureWipeArray(const_cast<char*>(keyStr.c_str()), keyStr.size());
             res = true;
         }
     } else /*if (options.keyStorage() == Options::KeyStorage::File)*/ {

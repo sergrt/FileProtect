@@ -73,6 +73,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>leKey</tabstop>
+  <tabstop>cbRemember</tabstop>
+  <tabstop>bnOk</tabstop>
+  <tabstop>bnCancel</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
