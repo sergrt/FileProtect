@@ -15,7 +15,6 @@
 #include <QDesktopServices>
 #include "ViewFileDialog.h"
 #include <QDesktopWidget>
-#include <InputKeyDialog.h>
 #include "../cryptopp/sha.h"
 #include <random>
 #include "AboutDialog.h"
@@ -112,13 +111,20 @@ void MainWindow::updateKeyIv(std::string keyStr) {
 bool MainWindow::updateKeys() {
     bool res = false;
     if (options.keyStorage() == Options::KeyStorage::Keyboard) {
-        InputKeyDialog dlg;
-        if (dlg.exec() == QDialog::Accepted) {
-            std::string keyStr = dlg.getKey();
-            if (keyStr.size() > 0) {
-                updateKeyIv(keyStr);
-                res = true;
+        std::string keyStr;
+
+        if (keyDlg.keyStored()) {
+            keyStr = keyDlg.getKey();
+        } else {
+            if (keyDlg.exec() == QDialog::Accepted) {
+                keyStr = keyDlg.getKey();
+                keyDlg.clearUi();
             }
+        }
+
+        if (keyStr.size() > 0) {
+            updateKeyIv(keyStr);
+            res = true;
         }
     } else /*if (options.keyStorage() == Options::KeyStorage::File)*/ {
         /*

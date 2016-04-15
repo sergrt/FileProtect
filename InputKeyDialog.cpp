@@ -4,12 +4,29 @@
 InputKeyDialog::InputKeyDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::InputKeyDialog) {
     ui->setupUi(this);
+    connect(ui->bnOk, &QPushButton::clicked, this, &InputKeyDialog::onOkClick);
+    connect(ui->bnCancel, &QPushButton::clicked, this, [=]() {QDialog::reject();});
 }
 
 InputKeyDialog::~InputKeyDialog() {
     delete ui;
 }
 
+void InputKeyDialog::onOkClick() {
+    if (ui->cbRemember->isChecked())
+        key = ui->leKey->text().toStdString();
+
+    QDialog::accept();
+}
+
+bool InputKeyDialog::keyStored() const {
+    return key.size() > 0;
+}
+
 std::string InputKeyDialog::getKey() const {
-    return ui->leKey->text().toStdString();
+    return key.size() == 0 ? ui->leKey->text().toStdString() : key;
+}
+
+void InputKeyDialog::clearUi() {
+    ui->leKey->setText("");
 }

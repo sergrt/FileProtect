@@ -10,6 +10,7 @@
 #include "WaitDialog.h"
 #include <QMenu>
 #include "FilesSyncDialog.h"
+#include "InputKeyDialog.h"
 
 namespace Ui {
     class MainWindow;
@@ -65,6 +66,7 @@ private:
     OptionsDialog optionsDlg;
     WaitDialog waitDlg;
     FilesSyncDialog syncDlg;
+    InputKeyDialog keyDlg;
 
     std::vector<FileOperation> fileOperations;
     // removes indicated file from fileOperations and from syncDlg.
