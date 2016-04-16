@@ -566,7 +566,36 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcN
 
 void MainWindow::onShowAbout() {
     AboutDialog d;
-    //d.setAttribute(Qt::WA_DeleteOnClose);
+
+#ifdef _MSC_VER
+    std::string VERSION;
+    QFile proFile(":/FileProtect.pro");
+    if (proFile.open(QIODevice::ReadOnly)) {
+        QByteArray line = proFile.readLine();
+        while (line.size() > 0) {
+            std::string tmp(line);
+            if (tmp.find("VERSION = ") == 0) {
+                size_t i = tmp.rfind("=");
+                if (i != std::string::npos && i != tmp.size() - 1) {
+                    tmp = tmp.substr(i + 1, tmp.size() - i);
+                    if (tmp.size() > 0) {
+                        // removing spaces
+                        size_t t = tmp.find_first_not_of(" \t", 0);
+                        if (t != std::string::npos)
+                            tmp = tmp.substr(t, tmp.size() - t);
+
+                        t = tmp.find_first_of(" \t\r\n", 0);
+                        if (t != std::string::npos)
+                            tmp = tmp.substr(0, t);
+                        VERSION = tmp;
+                    }
+                }
+            }
+            line = proFile.readLine();
+        }
+        proFile.close();
+    }
+#endif
     d.setVersion(VERSION);
 
     d.exec();
