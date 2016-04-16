@@ -188,7 +188,6 @@ void FilesSyncDialog::onEncryptSelClick() {
     if (updateFileOperations() > 0) {
         std::vector<std::string> unprocessedSrcNames;
         emit restoreEncryptedSelected(unprocessedSrcNames);
-        showResultMsg(unprocessedSrcNames);
     } else {
         showNoFilesSelectedMsg();
     }
@@ -198,7 +197,6 @@ void FilesSyncDialog::onWipeSelClick() {
     if (updateFileOperations() > 0) {
         std::vector<std::string> unprocessedSrcNames;
         emit wipeSelected(unprocessedSrcNames);
-        showResultMsg(unprocessedSrcNames);
     } else {
         showNoFilesSelectedMsg();
     }
@@ -211,27 +209,3 @@ void FilesSyncDialog::showNoFilesSelectedMsg() const {
     m.exec();
 }
 
-void FilesSyncDialog::showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const {
-    QMessageBox m;
-    m.setWindowTitle("Operation summary");
-    QString msgText;
-
-    if (unprocessedSrcNames.size() > 0) {
-        msgText = QString("Error processing files. %1 file(s) left unprocessed").arg(unprocessedSrcNames.size());
-        const size_t maxFilesToOutput = 10;
-        const size_t maxCount = std::min(maxFilesToOutput, unprocessedSrcNames.size());
-        for (std::size_t i = 0; i < maxCount; ++i)
-            msgText += (std::string("\n\t") + unprocessedSrcNames[i]).c_str();
-
-        if (maxCount < unprocessedSrcNames.size())
-            msgText += "\n\t...";
-
-        m.setIcon(QMessageBox::Warning);
-        m.exec();
-    } else {
-        msgText = "Operation completed";
-        m.setIcon(QMessageBox::Information);
-    }
-    m.setText(msgText);
-    m.exec();
-}

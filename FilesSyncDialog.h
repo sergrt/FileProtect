@@ -49,7 +49,6 @@ private:
     // Returns number of updated fileOperations
     int updateFileOperations();
     void showNoFilesSelectedMsg() const;
-    void showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const;
 signals:
     // sets FileOperation field to process particular item
     void setMarkForProcess(const std::string& encryptedName);

@@ -53,6 +53,7 @@ private:
 
     void processOperation(Operation operation);
     int processItems(const std::vector<std::string>& names, std::vector<std::string>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::string&));
+    void showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const;
     inline QFileSystemModel* model();
 
     CryptoPP::SecByteBlock key;

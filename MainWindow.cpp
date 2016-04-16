@@ -299,12 +299,7 @@ void MainWindow::processOperation(Operation operation) {
         }
         waitDlg.hide();
 
-        QMessageBox m;
-        m.setText(QString("Operation finished. Total files processed: %1 of %2").arg(successfullyProcessed).arg(totalCount));
-        m.setIcon(QMessageBox::Information);
-        m.setWindowTitle("Operation finished");
-        m.setStandardButtons(QMessageBox::StandardButton::Ok);
-        m.exec();
+        showResultMsg(unprocessedSrcNames);
     } catch (std::exception& e) {
         if (waitDlg.isVisible())
             waitDlg.hide();
@@ -315,6 +310,30 @@ void MainWindow::processOperation(Operation operation) {
         m.setStandardButtons(QMessageBox::StandardButton::Ok);
         m.exec();
     }
+}
+
+void MainWindow::showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const {
+    QMessageBox m;
+    m.setWindowTitle("Operation summary");
+    QString msgText;
+
+    if (unprocessedSrcNames.size() > 0) {
+        msgText = QString("Error processing files. %1 file(s) left unprocessed").arg(unprocessedSrcNames.size());
+        const size_t maxFilesToOutput = 10;
+        const size_t maxCount = std::min(maxFilesToOutput, unprocessedSrcNames.size());
+        for (std::size_t i = 0; i < maxCount; ++i)
+            msgText += (std::string("\n\t") + unprocessedSrcNames[i]).c_str();
+
+        if (maxCount < unprocessedSrcNames.size())
+            msgText += "\n\t...";
+
+        m.setIcon(QMessageBox::Warning);
+    } else {
+        msgText = "Operation completed";
+        m.setIcon(QMessageBox::Information);
+    }
+    m.setText(msgText);
+    m.exec();
 }
 
 void MainWindow::onEncryptSelected() {
@@ -518,6 +537,7 @@ void MainWindow::onFilesOpEncryptedSelected(std::vector<std::string>& unprocesse
             }
         }
     }
+    showResultMsg(unprocessedSrcNames);
 }
 
 void MainWindow::removeFromFileOps(const std::string& name, bool bySourcePath) {
@@ -562,6 +582,7 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcN
             */
         }
     }
+    showResultMsg(unprocessedSrcNames);
 }
 
 void MainWindow::onShowAbout() {
