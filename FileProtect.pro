@@ -48,8 +48,9 @@ FORMS    += MainWindow.ui \
     InputKeyDialog.ui \
     AboutDialog.ui
 
-
-LIBS += -L$$PWD/../cryptopp/ -lcryptopp
+unix: LIBS += -L$$PWD/../cryptopp/ -lcryptopp
+win32:debug: LIBS += -L$$PWD/../cryptopp/Win32/Output/Debug -lcryptlib
+win32:release: LIBS += -L$$PWD/../cryptopp/Win32/Output/Release -lcryptlib
 
 #INCLUDEPATH += $$PWD/../cryptopp
 #DEPENDPATH += $$PWD/../cryptopp
