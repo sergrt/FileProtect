@@ -588,7 +588,7 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcN
 void MainWindow::onShowAbout() {
     AboutDialog d;
 
-#ifdef _MSC_VER
+#ifndef VERSION
     std::string VERSION;
     QFile proFile(":/FileProtect.pro");
     if (proFile.open(QIODevice::ReadOnly)) {
