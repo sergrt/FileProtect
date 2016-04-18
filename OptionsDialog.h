@@ -16,7 +16,7 @@ public:
     ~OptionsDialog();
 
 private:
-    Ui::OptionsDialog *ui;
+    Ui::OptionsDialog* ui;
     Options& options;
 
     void onOkClick();

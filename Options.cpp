@@ -8,8 +8,9 @@
 
 // Key and IV for options encryption
 // keyStr should be 64 symbols (to be converted to 32 bytes) and ivStr should be 32 symbols
-const std::string keyStr = "1234567890123456789012345678901212345678901234567890123456789012";
-const std::string ivStr = "12345678901234561234567890123456";
+const std::string keyStr = "fa3ead1c0618de10a203a43aef0b19cc"
+                           "269a666774eb61d7895fbe10e1496dd7";
+const std::string ivStr =  "663e27b75f0795b66af1e58961a4f309";
 
 namespace OptionsText {
     const std::string iniName = "settings.ini";
@@ -76,7 +77,6 @@ std::string Options::encryptString(const std::wstring& src) {
     }
 
     stfEncryptor.Put(reinterpret_cast<const unsigned char*>(c.get()), sz);
-
     stfEncryptor.MessageEnd();
 
     return CryptoPPUtils::HexEncodeString(ciphertext);
@@ -88,7 +88,7 @@ std::wstring arrToWstr(const std::string& in) {
     if (sz != -1) {
         std::unique_ptr<wchar_t[]> t(new wchar_t[sz]);
         std::mbstowcs(t.get(), in.c_str(), in.size());
-        res = std::wstring(t.get());
+        res = std::wstring(t.get(), sz);
     } else {
         throw std::runtime_error("Error converting string");
     }

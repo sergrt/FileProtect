@@ -4,20 +4,19 @@
 #include <QDialog>
 
 namespace Ui {
-class ViewFileDialog;
+    class ViewFileDialog;
 }
 
-class ViewFileDialog : public QDialog
-{
+class ViewFileDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ViewFileDialog(QWidget *parent = 0);
+    explicit ViewFileDialog(QWidget* parent = 0);
     ~ViewFileDialog();
     void setText(const QString& text);
 
 private:
-    Ui::ViewFileDialog *ui;
+    Ui::ViewFileDialog* ui;
 };
 
 #endif // VIEWFILEDIALOG_H

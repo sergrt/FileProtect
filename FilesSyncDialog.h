@@ -13,14 +13,14 @@ class FilesSyncDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit FilesSyncDialog(QWidget *parent = 0);
+    explicit FilesSyncDialog(QWidget* parent = 0);
     ~FilesSyncDialog();
 
     void push_back(const FileOperation& op);
     void clear();
     void remove(const FileOperation& op);
 private:
-    Ui::FilesSyncDialog *ui;
+    Ui::FilesSyncDialog* ui;
     enum Columns {
         ColumnCheckBox = 0,
         ColumnSourceFileName = 1,

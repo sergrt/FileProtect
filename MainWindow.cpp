@@ -21,7 +21,7 @@
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QWidget* parent) :
     QMainWindow(parent), ui(new Ui::MainWindow), optionsDlg(options) {
     ui->setupUi(this);
 
@@ -99,7 +99,7 @@ void MainWindow::updateKeyIv(std::string keyStr) {
 
     key.resize(CryptoPP::AES::MAX_KEYLENGTH);
     if (CryptoPP::SHA256::DIGESTSIZE != key.size())
-        throw "stst";
+        throw "CryptoPP integrity questioned - AES MAX_KEYLENGTH != SHA256 DIGESTSIZE";
     memcpy(key.BytePtr(), digest, CryptoPP::AES::MAX_KEYLENGTH);
 
     std::reverse(keyStr.begin(), keyStr.end());
@@ -128,18 +128,11 @@ bool MainWindow::updateKeys() {
             res = true;
         }
     } else /*if (options.keyStorage() == Options::KeyStorage::File)*/ {
-        /*
-        std::string hexKey(CryptoPP::AES::MAX_KEYLENGTH,'0');
-        std::string hexIv(CryptoPP::AES::BLOCKSIZE, '0');
-        key = CryptoPPUtils::HexDecodeString(hexKey);
-        iv = CryptoPPUtils::HexDecodeString(hexIv);
-        */
-
         QFile f(QString::fromStdWString(options.keyFile()));
         if (f.open(QFile::ReadOnly)) {
             QByteArray b = f.readAll();
-            std::string keyStr(b);
             f.close();
+            std::string keyStr(b.data(), b.size());
             if (keyStr.size() > 0) {
                 updateKeyIv(keyStr);
                 res = true;
@@ -207,6 +200,12 @@ void MainWindow::onShowDecrypted() {
     syncDlg.clear();
     for (const auto& op : fileOperations)
         syncDlg.push_back(op);
+
+    const QRect desktopRect = QApplication::desktop()->screenGeometry();
+    syncDlg.setGeometry((desktopRect.right() - desktopRect.left()) / 2 - syncDlg.width() / 2,
+                  (desktopRect.bottom() - desktopRect.top()) / 2 - syncDlg.height() / 2,
+                   syncDlg.width(), syncDlg.height());
+
     if (syncDlg.exec() == QDialog::Rejected)
         fileOperations.clear();
 }

@@ -22,6 +22,16 @@ FileOperation& FileOperation::operator=(const FileOperation& op) {
 
     return *this;
 }
+/*
+FileOperation& FileOperation::operator=(FileOperation&& op) {
+    std::swap(sourcePathName, op.sourcePathName);
+    std::swap(destinationPathName, op.destinationPathName);
+    std::swap(initialFileSize, op.initialFileSize);
+    std::swap(initialModificationTime, op.initialModificationTime);
+    std::swap(processItem, op.processItem);
 
+    return *this;
+}
+*/
 FileOperation::~FileOperation() {
 }

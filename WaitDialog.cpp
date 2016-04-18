@@ -1,7 +1,7 @@
 #include "WaitDialog.h"
 #include "ui_WaitDialog.h"
 
-WaitDialog::WaitDialog(QWidget *parent)
+WaitDialog::WaitDialog(QWidget* parent)
     : QDialog(parent), ui(new Ui::WaitDialog) {
     ui->setupUi(this);
 }
@@ -17,4 +17,5 @@ void WaitDialog::step() {
 void WaitDialog::init(const int m) {
     ui->progressBar->setValue(0);
     ui->progressBar->setMaximum(m);
+    ui->progressBar->setTextVisible(m != 0); // Hide text while estimating
 }

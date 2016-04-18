@@ -1,11 +1,11 @@
 #include "InputKeyDialog.h"
 #include "ui_InputKeyDialog.h"
 
-InputKeyDialog::InputKeyDialog(QWidget *parent)
+InputKeyDialog::InputKeyDialog(QWidget* parent)
     : QDialog(parent), ui(new Ui::InputKeyDialog) {
     ui->setupUi(this);
     connect(ui->bnOk, &QPushButton::clicked, this, &InputKeyDialog::onOkClick);
-    connect(ui->bnCancel, &QPushButton::clicked, this, [=]() {QDialog::reject();});
+    connect(ui->bnCancel, &QPushButton::clicked, this, [=]() { QDialog::reject(); });
 }
 
 InputKeyDialog::~InputKeyDialog() {

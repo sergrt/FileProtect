@@ -4,13 +4,12 @@
 #include <QFileInfo>
 #include <QDateTime>
 #include <QMessageBox>
+#include <QFontDatabase>
 
 const QString textDifY = "Y";
 const QString textDifN = "N";
 
-#include <QFontDatabase>
-
-FilesSyncDialog::FilesSyncDialog(QWidget *parent)
+FilesSyncDialog::FilesSyncDialog(QWidget* parent)
     : QDialog(parent), ui(new Ui::FilesSyncDialog) {
     ui->setupUi(this);
     connect(ui->bnSelAll, &QPushButton::clicked, this, &FilesSyncDialog::onSelAllClick);
