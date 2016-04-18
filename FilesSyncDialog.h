@@ -51,13 +51,13 @@ private:
     void showNoFilesSelectedMsg() const;
 signals:
     // sets FileOperation field to process particular item
-    void setMarkForProcess(const std::string& encryptedName);
+    void setMarkForProcess(const std::wstring& encryptedName);
     // restores selected encrypted files with restore flag
-    void restoreEncryptedSelected(std::vector<std::string>& unprocessedSrcNames);
+    void restoreEncryptedSelected(std::vector<std::wstring>& unprocessedSrcNames);
     // discards all file changes
     void discardAllFiles();
     // wipes selected files
-    void wipeSelected(std::vector<std::string>& unprocessedSrcNames);
+    void wipeSelected(std::vector<std::wstring>& unprocessedSrcNames);
 };
 
 #endif // FILESSYNCDIALOG_H

@@ -57,19 +57,46 @@ void Options::updateKeys() {
     memcpy(iv.BytePtr(), CryptoPPUtils::HexDecodeString(ivStr).BytePtr(), CryptoPP::AES::BLOCKSIZE);
 }
 
-std::string Options::encryptString(const std::string& src) {
+
+std::string Options::encryptString(const std::wstring& src) {
     CryptoPP::AES::Encryption aesEncryption(key, key.size());
     CryptoPP::CBC_Mode_ExternalCipher::Encryption cbcEncryption(aesEncryption, iv);
 
     std::string ciphertext;
     CryptoPP::StreamTransformationFilter stfEncryptor(cbcEncryption, new CryptoPP::StringSink(ciphertext));
-    stfEncryptor.Put(reinterpret_cast<const unsigned char*>(src.c_str()), src.length() + 1);
+    //stfEncryptor.Put(reinterpret_cast<const unsigned char*>(src.c_str()), src.length() + 1);
+
+    const int sz = std::wcstombs(nullptr, &src[0], src.size());
+    std::unique_ptr<char[]> c;
+    if (sz != -1) {
+        c.reset(new char[sz]);
+        std::wcstombs(c.get(), &src[0], src.size());
+    } else {
+        throw std::runtime_error("Error converting string");
+    }
+
+    stfEncryptor.Put(reinterpret_cast<const unsigned char*>(c.get()), sz);
+
     stfEncryptor.MessageEnd();
 
     return CryptoPPUtils::HexEncodeString(ciphertext);
 }
 
-std::string Options::decryptString(const std::string& src) {
+std::wstring arrToWstr(const std::string& in) {
+    std::wstring res;
+    const int sz = std::mbstowcs(nullptr, in.c_str(), in.size());
+    if (sz != -1) {
+        std::unique_ptr<wchar_t[]> t(new wchar_t[sz]);
+        std::mbstowcs(t.get(), in.c_str(), in.size());
+        res = std::wstring(t.get());
+    } else {
+        throw std::runtime_error("Error converting string");
+    }
+    return res;
+}
+
+
+std::wstring Options::decryptString(const std::string& src) {
     CryptoPP::SecByteBlock tmp = CryptoPPUtils::HexDecodeString(src);
     std::string srcDecoded(reinterpret_cast<char*>(tmp.BytePtr()), tmp.size());
 
@@ -81,7 +108,7 @@ std::string Options::decryptString(const std::string& src) {
     stfDecryptor.Put(reinterpret_cast<const unsigned char*>(srcDecoded.c_str()), srcDecoded.size());
     stfDecryptor.MessageEnd();
 
-    return decryptedtext;
+    return arrToWstr(decryptedtext);
 }
 
 bool Options::load() {
@@ -161,16 +188,16 @@ Options::DecryptionPlace Options::decryptionPlace() const {
     return m_decryptionPlace;
 }
 
-std::string Options::keyFile() const {
+std::wstring Options::keyFile() const {
     return m_keyFile;
 }
-std::string Options::wipeProgram() const {
+std::wstring Options::wipeProgram() const {
     return m_wipeProgram;
 }
-std::string Options::decryptionFolder() const {
+std::wstring Options::decryptionFolder() const {
     return m_decryptionFolder;
 }
-std::string Options::rootPath() const {
+std::wstring Options::rootPath() const {
     return m_rootPath;
 }
 
@@ -184,17 +211,17 @@ void Options::setDecryptionPlace(DecryptionPlace d) {
     m_decryptionPlace = d;
 }
 
-void Options::setKeyFile(const std::string& f) {
+void Options::setKeyFile(const std::wstring& f) {
     m_keyFile = f;
 }
-void Options::setWipeProgram(const std::string& p) {
+void Options::setWipeProgram(const std::wstring& p) {
     m_wipeProgram = p;
 }
-void Options::setDecryptionFolder(const std::string& f) {
+void Options::setDecryptionFolder(const std::wstring& f) {
     m_decryptionFolder = f;
 }
 
-void Options::setRootPath(const std::string& p) {
+void Options::setRootPath(const std::wstring& p) {
     m_rootPath = p;
 }
 

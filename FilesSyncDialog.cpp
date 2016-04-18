@@ -60,7 +60,7 @@ FilesSyncDialog::~FilesSyncDialog() {
     delete ui;
 }
 
-void FilesSyncDialog::push_back(const FileOperation &op) {
+void FilesSyncDialog::push_back(const FileOperation& op) {
     const int row = ui->tableWidget->rowCount();
     ui->tableWidget->insertRow(row);
     // Checkbox
@@ -68,7 +68,7 @@ void FilesSyncDialog::push_back(const FileOperation &op) {
     checkBox->setCheckState(Qt::Unchecked);
     ui->tableWidget->setItem(row, ColumnCheckBox, checkBox);
     // File name
-    ui->tableWidget->setItem(row, ColumnSourceFileName, new QTableWidgetItem(op.sourcePathName.c_str()));
+    ui->tableWidget->setItem(row, ColumnSourceFileName, new QTableWidgetItem(QString::fromStdWString(op.sourcePathName)));
     // File size
     /*
     QTableWidgetItem* sizeItem = new QTableWidgetItem(QString("%1").arg(op.initialFileSize));
@@ -86,7 +86,7 @@ void FilesSyncDialog::push_back(const FileOperation &op) {
 
     bool difSize = false;
     bool difTime = false;
-    QFile f(op.destinationPathName.c_str());
+    QFile f(QString::fromStdWString(op.destinationPathName));
     if (f.exists()) {
         const unsigned long newSize = f.size();
         if (newSize != op.initialFileSize) {
@@ -126,7 +126,7 @@ void FilesSyncDialog::clear() {
 
 void FilesSyncDialog::remove(const FileOperation& op) {
     for (int i = 0; i < ui->tableWidget->rowCount(); ++i) {
-        const std::string sName = ui->tableWidget->item(i, ColumnSourceFileName)->text().toStdString();
+        const std::wstring sName = ui->tableWidget->item(i, ColumnSourceFileName)->text().toStdWString();
         if (sName == op.sourcePathName) {
             ui->tableWidget->removeRow(i);
             break;
@@ -177,7 +177,7 @@ int FilesSyncDialog::updateFileOperations() {
     const int rowCount = ui->tableWidget->rowCount();
     for (int row = 0; row < rowCount; ++row) {
         if (ui->tableWidget->item(row, ColumnCheckBox)->checkState() == Qt::Checked) {
-            emit setMarkForProcess(ui->tableWidget->item(row, ColumnSourceFileName)->text().toStdString());
+            emit setMarkForProcess(ui->tableWidget->item(row, ColumnSourceFileName)->text().toStdWString());
             ++res;
         }
     }
@@ -186,7 +186,7 @@ int FilesSyncDialog::updateFileOperations() {
 
 void FilesSyncDialog::onEncryptSelClick() {
     if (updateFileOperations() > 0) {
-        std::vector<std::string> unprocessedSrcNames;
+        std::vector<std::wstring> unprocessedSrcNames;
         emit restoreEncryptedSelected(unprocessedSrcNames);
     } else {
         showNoFilesSelectedMsg();
@@ -195,7 +195,7 @@ void FilesSyncDialog::onEncryptSelClick() {
 
 void FilesSyncDialog::onWipeSelClick() {
     if (updateFileOperations() > 0) {
-        std::vector<std::string> unprocessedSrcNames;
+        std::vector<std::wstring> unprocessedSrcNames;
         emit wipeSelected(unprocessedSrcNames);
     } else {
         showNoFilesSelectedMsg();

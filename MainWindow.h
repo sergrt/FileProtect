@@ -16,8 +16,7 @@ namespace Ui {
     class MainWindow;
 }
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
@@ -52,16 +51,16 @@ private:
     };
 
     void processOperation(Operation operation);
-    int processItems(const std::vector<std::string>& names, std::vector<std::string>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::string&));
-    void showResultMsg(const std::vector<std::string>& unprocessedSrcNames) const;
+    int processItems(const std::vector<std::wstring>& names, std::vector<std::wstring>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::wstring&));
+    void showResultMsg(const std::vector<std::wstring>& unprocessedSrcNames) const;
     inline QFileSystemModel* model();
 
     CryptoPP::SecByteBlock key;
     CryptoPP::SecByteBlock iv;
-    bool doEncrypt(const std::string& infile);
-    bool doDecrypt(const std::string& infile);
-    bool doRemove(const std::string& fileName);
-    bool doCount(const std::string& fileName);
+    bool doEncrypt(const std::wstring& infile);
+    bool doDecrypt(const std::wstring& infile);
+    bool doRemove(const std::wstring& fileName);
+    bool doCount(const std::wstring& fileName);
 
     Options options;
     OptionsDialog optionsDlg;
@@ -73,16 +72,16 @@ private:
     // removes indicated file from fileOperations and from syncDlg.
     // bySourcePath == true -> name = sourceFileName
     // bySourcePath == false -> name = destinationFileName
-    void removeFromFileOps(const std::string& name, bool bySourcePath);
+    void removeFromFileOps(const std::wstring& name, bool bySourcePath);
     void closeEvent(QCloseEvent* event);
 
-    void spawnFileViewer(const std::string& fileName);
+    void spawnFileViewer(const std::wstring& fileName);
 
 public slots:
-    void onMarkForProcess(const std::string& encryptedName);
-    void onFilesOpEncryptedSelected(std::vector<std::string>& unprocessedSrcNames);
+    void onMarkForProcess(const std::wstring& encryptedName);
+    void onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocessedSrcNames);
     void onDiscardAllFiles();
-    void onFilesOpWipeSelected(std::vector<std::string>& unprocessedSrcNames);
+    void onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrcNames);
 };
 
 #endif // MAINWINDOW_H

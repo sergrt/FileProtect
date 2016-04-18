@@ -48,9 +48,9 @@ void OptionsDialog::update() {
     ui->rbFolder->setChecked(d == Options::DecryptionPlace::Specified);
     ui->frameDecryptFolder->setEnabled(d == Options::DecryptionPlace::Specified);
 
-    ui->leKeyFile->setText(options.keyFile().c_str());
-    ui->leWipeProgram->setText(options.wipeProgram().c_str());
-    ui->leDecryptFolder->setText(options.decryptionFolder().c_str());
+    ui->leKeyFile->setText(QString::fromStdWString(options.keyFile()));
+    ui->leWipeProgram->setText(QString::fromStdWString(options.wipeProgram()));
+    ui->leDecryptFolder->setText(QString::fromStdWString(options.decryptionFolder()));
 }
 
 OptionsDialog::~OptionsDialog() {
@@ -63,11 +63,11 @@ void OptionsDialog::onOkClick() {
             throw std::logic_error("Options not consistent");
 
         options.setKeyStorage(ui->rbKbd->isChecked() ? Options::KeyStorage::Keyboard : Options::KeyStorage::File);
-        options.setKeyFile(ui->leKeyFile->text().toStdString());
+        options.setKeyFile(ui->leKeyFile->text().toStdWString());
         options.setWipeMethod(ui->rbNone->isChecked() ? Options::WipeMethod::Regular : Options::WipeMethod::External);
-        options.setWipeProgram(ui->leWipeProgram->text().toStdString());
+        options.setWipeProgram(ui->leWipeProgram->text().toStdWString());
         options.setDecryptionPlace(ui->rbSame->isChecked() ? Options::DecryptionPlace::Inplace : Options::DecryptionPlace::Specified);
-        options.setDecryptionFolder(ui->leDecryptFolder->text().toStdString());
+        options.setDecryptionFolder(ui->leDecryptFolder->text().toStdWString());
         if (!options.save())
             throw std::runtime_error("Unable to save options");
         close();

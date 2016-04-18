@@ -3,14 +3,14 @@
 
 struct FileOperation {
 //public:
-    FileOperation(const std::string& src, const std::string& dst, unsigned long sz, const time_t& t);
+    FileOperation(const std::wstring& src, const std::wstring& dst, unsigned long sz, const time_t& t);
     ~FileOperation();
     FileOperation(FileOperation&& op);
     FileOperation& operator=(const FileOperation& op);
 
 //private:
-    std::string sourcePathName;
-    std::string destinationPathName;
+    std::wstring sourcePathName;
+    std::wstring destinationPathName;
     unsigned long initialFileSize;
     time_t initialModificationTime;
 

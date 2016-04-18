@@ -1,7 +1,7 @@
 #include "FileOperation.h"
 //#include <utility>
 
-FileOperation::FileOperation(const std::string& src, const std::string& dst, unsigned long sz, const time_t& t)
+FileOperation::FileOperation(const std::wstring& src, const std::wstring& dst, unsigned long sz, const time_t& t)
     : sourcePathName(src), destinationPathName(dst), initialFileSize(sz), initialModificationTime(t) {
 }
 

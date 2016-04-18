@@ -31,38 +31,38 @@ public:
     bool load();
 
     void setKeyStorage(KeyStorage k);
-    void setKeyFile(const std::string& f);
+    void setKeyFile(const std::wstring& f);
     void setWipeMethod(WipeMethod w);
-    void setWipeProgram(const std::string& p);
+    void setWipeProgram(const std::wstring& p);
     void setDecryptionPlace(DecryptionPlace p);
-    void setDecryptionFolder(const std::string& f);
+    void setDecryptionFolder(const std::wstring& f);
 
-    void setRootPath(const std::string& p);
+    void setRootPath(const std::wstring& p);
 
     KeyStorage keyStorage() const;
-    std::string keyFile() const;
+    std::wstring keyFile() const;
     WipeMethod wipeMethod() const;
-    std::string wipeProgram() const;
+    std::wstring wipeProgram() const;
     DecryptionPlace decryptionPlace() const;
-    std::string decryptionFolder() const;
+    std::wstring decryptionFolder() const;
 
-    std::string rootPath() const;
+    std::wstring rootPath() const;
 private:
     CryptoPP::SecByteBlock key;
     CryptoPP::SecByteBlock iv;
     void updateKeys();
 
-    std::string encryptString(const std::string& src);
-    std::string decryptString(const std::string& src);
+    std::string encryptString(const std::wstring& src);
+    std::wstring decryptString(const std::string& src);
 
     KeyStorage m_keyStorage;
-    std::string m_keyFile;
+    std::wstring m_keyFile;
     WipeMethod m_wipeMethod;
-    std::string m_wipeProgram;
+    std::wstring m_wipeProgram;
     DecryptionPlace m_decryptionPlace;
-    std::string m_decryptionFolder;
+    std::wstring m_decryptionFolder;
 
-    std::string m_rootPath;
+    std::wstring m_rootPath;
 };
 
 #endif // OPTIONS_H
