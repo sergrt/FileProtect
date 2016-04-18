@@ -474,7 +474,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         for (const auto& op : fileOperations)
             syncDlg.push_back(op);
 
-        if (syncDlg.exec() == QDialog::Rejected)
+        if (syncDlg.exec() != QDialog::Rejected)
             event->ignore();
     }
 }

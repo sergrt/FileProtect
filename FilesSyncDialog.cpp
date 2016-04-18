@@ -23,7 +23,7 @@ FilesSyncDialog::FilesSyncDialog(QWidget* parent)
 
     connect(ui->bnDiscard, &QPushButton::clicked, this, [=]() {
         emit discardAllFiles();
-        QDialog::accept(); });
+        QDialog::reject(); });
     connect(ui->bnBackToMain, &QPushButton::clicked, this, [=]() { /*QDialog::reject();*/QDialog::accept(); });
 
     ui->tableWidget->insertColumn(ColumnCheckBox);
@@ -207,4 +207,8 @@ void FilesSyncDialog::showNoFilesSelectedMsg() const {
     m.setWindowTitle("Unable to proceed");
     m.exec();
 }
-
+#include <QCloseEvent>
+void FilesSyncDialog::closeEvent(QCloseEvent* event) {
+    event->ignore();
+    QDialog::accept();
+}

@@ -49,6 +49,7 @@ private:
     // Returns number of updated fileOperations
     int updateFileOperations();
     void showNoFilesSelectedMsg() const;
+    void closeEvent(QCloseEvent* event);
 signals:
     // sets FileOperation field to process particular item
     void setMarkForProcess(const std::wstring& encryptedName);
