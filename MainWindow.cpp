@@ -386,6 +386,7 @@ bool MainWindow::doDecrypt(const std::wstring& infile) {
             if (!d.exists() && !d.mkpath(decryptionFolderFw))
                 throw std::runtime_error("Error creating destination dir");
 
+            // It is safe to use "/" here - Qt will translate it to correct path symbol
             outfile = d.absolutePath().toStdWString() + L"/" + filename.toStdWString();
         } else {
             outfile += L"~dec";
@@ -393,13 +394,10 @@ bool MainWindow::doDecrypt(const std::wstring& infile) {
         CryptoPP::CTR_Mode<CryptoPP::AES>::Decryption aes(key, key.size(), iv);
         CryptoPP::FileSource(infile.c_str(), true, new CryptoPP::StreamTransformationFilter(aes, new CryptoPP::FileSink(outfile.c_str())));
 
-        //
-        QFile f(QString::fromStdWString(outfile));
-        const unsigned long sz = f.size();
-        QFileInfo fi(f);
+        QFileInfo fi(QString::fromStdWString(outfile));
+        const unsigned long sz = fi.size();
         time_t timestamp = fi.lastModified().toTime_t();
         std::wstring fileOpOutName = outfile;
-        //
         if (options.decryptionPlace() == Options::DecryptionPlace::Inplace) {
             if (!doRemove(infile) || !QFile::rename(QString::fromStdWString(outfile), QString::fromStdWString(infile)))
                 throw std::runtime_error("Error file removing/renaming");
@@ -410,6 +408,7 @@ bool MainWindow::doDecrypt(const std::wstring& infile) {
                return o.sourcePathName == infile;
             }) == fileOperations.end()) {
             fileOperations.emplace_back(FileOperation(infile, fileOpOutName, sz, timestamp));
+            //syncDlg.push_back(fileOperations[fileOperations.size() - 1]);
         }
     } catch (std::exception&) {
         res = false;
@@ -442,7 +441,7 @@ bool MainWindow::doRemove(const std::wstring& fileName) {
 int MainWindow::processItems(const std::vector<std::wstring>& names, std::vector<std::wstring>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::wstring&)) {
     int res = 0;
     for (const auto& name : names) {
-        QString tmpName = QString::fromStdWString(name);
+        const QString tmpName = QString::fromStdWString(name);
         QFileInfo f(tmpName);
         if (!f.isDir()) {
             waitDlg.step();
@@ -543,6 +542,16 @@ void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocess
 }
 
 void MainWindow::removeFromFileOps(const std::wstring& name, bool bySourcePath) {
+    /*
+    std::remove_if(fileOperations.begin(), fileOperations.end(), [=](const FileOperation& op) {
+        const std::wstring opFileName = bySourcePath ? op.sourcePathName : op.destinationPathName;
+        bool res = opFileName == name;
+        if (res)
+            syncDlg.remove(op);
+        return res;
+    });
+    */
+
 
     for (std::size_t i = 0; i < fileOperations.size(); ++i) {
         const std::wstring opFileName = bySourcePath ? fileOperations[i].sourcePathName : fileOperations[i].destinationPathName;
