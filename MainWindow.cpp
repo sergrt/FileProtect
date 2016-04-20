@@ -116,10 +116,9 @@ bool MainWindow::updateKeys() {
         if (keyDlg.keyStored()) {
             keyStr = keyDlg.getKey();
         } else {
-            if (keyDlg.exec() == QDialog::Accepted) {
+            if (keyDlg.exec() == QDialog::Accepted)
                 keyStr = keyDlg.getKey();
-                keyDlg.clearUi();
-            }
+            keyDlg.clearUi();
         }
 
         if (keyStr.size() > 0) {
@@ -263,10 +262,10 @@ void MainWindow::processOperation(Operation operation) {
             names.emplace_back(model()->filePath(index).toStdWString());
 
         std::vector<std::wstring> unprocessedSrcNames;
-        const unsigned int totalCount = processItems(names, unprocessedSrcNames, &MainWindow::doCount);
+        const unsigned int totalCount = processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount);
         //waitDlg.hide();
 
-        bool (MainWindow::*memberFn)(const std::wstring&) = nullptr;
+        bool (MainWindow::*memberFn)(const std::wstring&, const std::wstring&) = nullptr;
         switch (operation) {
         case Operation::Encrypt:
             memberFn = &MainWindow::doEncrypt;
@@ -282,7 +281,7 @@ void MainWindow::processOperation(Operation operation) {
         waitDlg.init(totalCount);
         //waitDlg.show();
         unprocessedSrcNames.clear();
-        const unsigned int successfullyProcessed = processItems(names, unprocessedSrcNames, memberFn);
+        const unsigned int successfullyProcessed = processItems(names, unprocessedSrcNames, L"/", memberFn);
 
         if (operation == Operation::Wipe && successfullyProcessed == totalCount) { // do not remove dirs if not all files were wiped
             // This operation does not participate in resulting messageBox
@@ -353,7 +352,7 @@ void MainWindow::onWipeSelected() {
         processOperation(Operation::Wipe);
 
 }
-bool MainWindow::doEncrypt(const std::wstring& infile) {
+bool MainWindow::doEncrypt(const std::wstring& infile, const std::wstring&) {
     bool res = true;
 
     try {
@@ -372,7 +371,7 @@ bool MainWindow::doEncrypt(const std::wstring& infile) {
     return res;
 }
 
-bool MainWindow::doDecrypt(const std::wstring& infile) {
+bool MainWindow::doDecrypt(const std::wstring& infile, const std::wstring& relativePath) {
     bool res = true;
 
     try {
@@ -386,8 +385,13 @@ bool MainWindow::doDecrypt(const std::wstring& infile) {
             if (!d.exists() && !d.mkpath(decryptionFolderFw))
                 throw std::runtime_error("Error creating destination dir");
 
+            // Create relative dir
+            const std::wstring fullFileDir = d.absolutePath().toStdWString() + (relativePath.size() > 0 ? relativePath : L"");
+            QDir tmpDir(QString::fromStdWString(fullFileDir));
+            if (!tmpDir.exists() && !tmpDir.mkpath(QString::fromStdWString(fullFileDir)))
+                throw std::runtime_error("Unable to create relative dir");
             // It is safe to use "/" here - Qt will translate it to correct path symbol
-            outfile = d.absolutePath().toStdWString() + L"/" + filename.toStdWString();
+            outfile = fullFileDir + L"/" + filename.toStdWString();
         } else {
             outfile += L"~dec";
         }
@@ -407,7 +411,7 @@ bool MainWindow::doDecrypt(const std::wstring& infile) {
         if (std::find_if(fileOperations.begin(), fileOperations.end(), [&infile](const FileOperation& o)->bool {
                return o.sourcePathName == infile;
             }) == fileOperations.end()) {
-            fileOperations.emplace_back(FileOperation(infile, fileOpOutName, sz, timestamp));
+            fileOperations.emplace_back(FileOperation(infile, fileOpOutName, sz, timestamp, relativePath));
             //syncDlg.push_back(fileOperations[fileOperations.size() - 1]);
         }
     } catch (std::exception&) {
@@ -417,11 +421,11 @@ bool MainWindow::doDecrypt(const std::wstring& infile) {
     return res;
 }
 
-bool MainWindow::doCount(const std::wstring&/* fileName*/) {
+bool MainWindow::doCount(const std::wstring&/* fileName*/, const std::wstring&) {
     return true;
 }
 
-bool MainWindow::doRemove(const std::wstring& fileName) {
+bool MainWindow::doRemove(const std::wstring& fileName, const std::wstring&) {
     bool res = true;
     if (options.wipeMethod() == Options::WipeMethod::Regular) {
         QFile::remove(QString::fromStdWString(fileName));
@@ -438,7 +442,7 @@ bool MainWindow::doRemove(const std::wstring& fileName) {
     return res;
 }
 
-int MainWindow::processItems(const std::vector<std::wstring>& names, std::vector<std::wstring>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::wstring&)) {
+int MainWindow::processItems(const std::vector<std::wstring>& names, std::vector<std::wstring>& unprocessedSrcNames, const std::wstring& relativePath, bool (MainWindow::*procFunc)(const std::wstring&, const std::wstring&)) {
     int res = 0;
     for (const auto& name : names) {
         const QString tmpName = QString::fromStdWString(name);
@@ -447,19 +451,30 @@ int MainWindow::processItems(const std::vector<std::wstring>& names, std::vector
             waitDlg.step();
             qApp->processEvents();
 
-            if ((this->*procFunc)(f.absoluteFilePath().toStdWString()))
+            if ((this->*procFunc)(f.absoluteFilePath().toStdWString(), relativePath))
                 ++res;
             else
                 unprocessedSrcNames.push_back(name);
         } else {
             QDir dir(tmpName);
-            QFileInfoList fil = dir.entryInfoList(QDir::Filter(dirFilter));
-            for (const auto& f : fil) {
-                std::vector<std::wstring> tmp;
-                tmp.emplace_back(f.absoluteFilePath().toStdWString());
-                res += processItems(tmp, unprocessedSrcNames, procFunc);
-            }
-        }
+            std::wstring lastDirName = dir.path().toStdWString();
+            const std::size_t delimPos = lastDirName.rfind(L"/");
+            if (delimPos == std::wstring::npos) {
+                throw std::runtime_error("Relative path is invalid");
+            } else {
+                lastDirName = lastDirName.substr(delimPos + 1, lastDirName.size() - delimPos - 1);
+
+                const std::wstring newRelativePath = relativePath
+                    + ((relativePath.size() > 0 && relativePath[relativePath.size() - 1] != L'/') ? L"/" : L"")
+                    + lastDirName;
+                QFileInfoList fil = dir.entryInfoList(QDir::Filter(dirFilter));
+                for (const auto& f : fil) {
+                    std::vector<std::wstring> tmp;
+                    tmp.emplace_back(f.absoluteFilePath().toStdWString());
+                    res += processItems(tmp, unprocessedSrcNames, newRelativePath, procFunc);
+                }
+            } // relative path ok
+        } // f is dir
     }
     return res;
 }
@@ -486,23 +501,25 @@ void MainWindow::onMarkForProcess(const std::wstring& encryptedName) {
 }
 
 void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocessedSrcNames) {
+    waitDlg.init(0);
+    waitDlg.show();
+
     std::vector<std::wstring> names;
     std::vector<std::wstring> namesToReplace;
+    std::vector<std::wstring> relativePaths;
     for (const auto& op : fileOperations) {
         if (op.processItem) {
             names.emplace_back(op.destinationPathName);
             namesToReplace.emplace_back(op.sourcePathName);
+            relativePaths.emplace_back(op.relativePath);
         }
     }
     //std::vector<std::string> unprocessedSrcNames;
+    waitDlg.init(names.size());
     unprocessedSrcNames.clear();
-    /*int processedCount = */processItems(names, unprocessedSrcNames, &MainWindow::doEncrypt);
+    /*int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doEncrypt);
 
-    // removing encrypted files from filesOperations list
-    for (const auto& n : namesToReplace) {
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
-            removeFromFileOps(n, true);
-    }
+
 
     /*
     std::size_t filesLeft = names.size();
@@ -531,13 +548,43 @@ void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocess
                 const QString curName = QString::fromStdWString(names[i]);
                 const QString curNameToReplace = QString::fromStdWString(namesToReplace[i]);
                 QFile d(curNameToReplace);
-                if (d.remove() && QFile::rename(curName, curNameToReplace))
+                if (d.remove() && QFile::rename(curName, curNameToReplace)) {
                     --filesLeft;
-                else
+                    // Check if relative path is empty and delete path
+                    QFileInfo f(curName);
+                    QString topLevelRelPath = f.absolutePath();
+                    topLevelRelPath = topLevelRelPath.left(topLevelRelPath.size() - relativePaths[i].size());
+
+                    const std::size_t delimPos = relativePaths[i].find(L'/', 1);
+                    if (delimPos != std::wstring::npos)
+                        topLevelRelPath += QString::fromStdWString(relativePaths[i].substr(0, delimPos));
+                    else if (relativePaths[i].size() != 1)
+                        topLevelRelPath += QString::fromStdWString(relativePaths[i]);
+
+                    if (topLevelRelPath.size() != 0) {
+                        std::vector<std::wstring> names, unprocessedSrcNames;
+                        names.push_back(topLevelRelPath.toStdWString());
+                        if (processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount) == 0) {
+                            QDir d(topLevelRelPath);
+                            d.removeRecursively();
+                        }
+                    }
+                } else {
+                    // Removing or renaming failed
                     unprocessedSrcNames.push_back(namesToReplace[i]);
+                }
             }
         }
     }
+
+    // removing encrypted files from filesOperations list
+    for (const auto& n : namesToReplace) {
+        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
+            removeFromFileOps(n, true);
+    }
+
+    waitDlg.hide();
+
     showResultMsg(unprocessedSrcNames);
 }
 
@@ -570,14 +617,17 @@ void MainWindow::onDiscardAllFiles() {
 }
 
 void MainWindow::onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrcNames) {
+    waitDlg.init(0);
+    waitDlg.show();
     std::vector<std::wstring> names;
     for (const auto& op : fileOperations) {
         if (op.processItem)
             names.emplace_back(op.destinationPathName);
     }
     //std::vector<std::string> unprocessedSrcNames;
+    waitDlg.init(names.size());
     unprocessedSrcNames.clear();
-    /*const int processedCount = */processItems(names, unprocessedSrcNames, &MainWindow::doRemove);
+    /*const int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doRemove);
 
     // removing encrypted files from filesOperations list
     for (const auto& n : names) {
@@ -593,6 +643,7 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrc
             */
         }
     }
+    waitDlg.hide();
     showResultMsg(unprocessedSrcNames);
 }
 

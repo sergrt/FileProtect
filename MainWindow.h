@@ -51,16 +51,16 @@ private:
     };
 
     void processOperation(Operation operation);
-    int processItems(const std::vector<std::wstring>& names, std::vector<std::wstring>& unprocessedSrcNames, bool (MainWindow::*procFunc)(const std::wstring&));
+    int processItems(const std::vector<std::wstring>& names, std::vector<std::wstring>& unprocessedSrcNames, const std::wstring& relativePath, bool (MainWindow::*procFunc)(const std::wstring&, const std::wstring&));
     void showResultMsg(const std::vector<std::wstring>& unprocessedSrcNames) const;
     inline QFileSystemModel* model();
 
     CryptoPP::SecByteBlock key;
     CryptoPP::SecByteBlock iv;
-    bool doEncrypt(const std::wstring& infile);
-    bool doDecrypt(const std::wstring& infile);
-    bool doRemove(const std::wstring& fileName);
-    bool doCount(const std::wstring& fileName);
+    bool doEncrypt(const std::wstring& infile, const std::wstring& = L"");
+    bool doDecrypt(const std::wstring& infile, const std::wstring& relativePath = L"");
+    bool doRemove(const std::wstring& fileName, const std::wstring& = L"");
+    bool doCount(const std::wstring& fileName, const std::wstring& = L"");
 
     Options options;
     OptionsDialog optionsDlg;

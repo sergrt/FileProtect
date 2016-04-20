@@ -16,6 +16,7 @@ public:
     std::string getKey() const;
     bool keyStored() const;
     void clearUi();
+    int exec();
 private:
     Ui::InputKeyDialog* ui;
     std::string key;

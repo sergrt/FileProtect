@@ -12,6 +12,11 @@ InputKeyDialog::~InputKeyDialog() {
     delete ui;
 }
 
+int InputKeyDialog::exec() {
+    ui->leKey->setFocus();
+    return QDialog::exec();
+}
+
 void InputKeyDialog::onOkClick() {
     if (ui->cbRemember->isChecked())
         key = ui->leKey->text().toStdString();
