@@ -57,7 +57,7 @@
    <item row="0" column="0" colspan="5">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>List of decrypted (and not re-encrypted) files during current session:</string>
+      <string>List of decrypted (and not re-encrypted or wiped) files during current session:</string>
      </property>
     </widget>
    </item>
@@ -136,7 +136,7 @@
    <item row="3" column="2">
     <widget class="QPushButton" name="bnBackToMain">
      <property name="text">
-      <string>Back to file view</string>
+      <string>Back to main window</string>
      </property>
     </widget>
    </item>

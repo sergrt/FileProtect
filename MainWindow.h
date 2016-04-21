@@ -30,7 +30,7 @@ public slots:
     void onDecryptSelected();
     void onViewSelected();
     void onExecuteSelected();
-    void onShowDecrypted();
+    int onShowDecrypted();
     void onSetAsRoot();
     void onWipeSelected();
     void onOptionsClick();
@@ -42,7 +42,7 @@ private:
     QMenu contextMenu;
 
     bool updateKeys();
-    void updateKeyIv(std::string keyStr);
+    void updateKeyIv(std::string& keyStr);
 
     enum class Operation {
         Encrypt,

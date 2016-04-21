@@ -94,13 +94,15 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
-void MainWindow::updateKeyIv(std::string keyStr) {
+// Note that keyStr is modified here
+void MainWindow::updateKeyIv(std::string& keyStr) {
     byte digest[CryptoPP::SHA256::DIGESTSIZE];
     CryptoPP::SHA256().CalculateDigest(digest, (byte*)keyStr.c_str(), keyStr.size());
 
     key.resize(CryptoPP::AES::MAX_KEYLENGTH);
     if (CryptoPP::SHA256::DIGESTSIZE != key.size())
         throw "CryptoPP integrity questioned - AES MAX_KEYLENGTH != SHA256 DIGESTSIZE";
+
     memcpy(key.BytePtr(), digest, CryptoPP::AES::MAX_KEYLENGTH);
 
     std::reverse(keyStr.begin(), keyStr.end());
@@ -111,9 +113,9 @@ void MainWindow::updateKeyIv(std::string keyStr) {
 
 bool MainWindow::updateKeys() {
     bool res = false;
-    if (options.keyStorage() == Options::KeyStorage::Keyboard) {
-        std::string keyStr;
+    std::string keyStr;
 
+    if (options.keyStorage() == Options::KeyStorage::Keyboard) {
         if (keyDlg.keyStored()) {
             keyStr = keyDlg.getKey();
         } else {
@@ -121,23 +123,19 @@ bool MainWindow::updateKeys() {
                 keyStr = keyDlg.getKey();
             keyDlg.clearUi();
         }
-
-        if (keyStr.size() > 0) {
-            updateKeyIv(keyStr);
-            CryptoPP::SecureWipeArray(const_cast<char*>(keyStr.c_str()), keyStr.size());
-            res = true;
-        }
     } else /*if (options.keyStorage() == Options::KeyStorage::File)*/ {
         QFile f(QString::fromStdWString(options.keyFile()));
         if (f.open(QFile::ReadOnly)) {
             QByteArray b = f.readAll();
             f.close();
-            std::string keyStr(b.data(), b.size());
-            if (keyStr.size() > 0) {
-                updateKeyIv(keyStr);
-                res = true;
-            }
+            keyStr = std::string(b.data(), b.size());
         }
+    }
+
+    if (keyStr.size() > 0) {
+        updateKeyIv(keyStr); // Do not use keyStr after this point
+        CryptoPP::SecureWipeArray(const_cast<char*>(keyStr.c_str()), keyStr.size());
+        res = true;
     }
     return res;
 }
@@ -147,9 +145,11 @@ QFileSystemModel* MainWindow::model() {
 }
 
 void MainWindow::onCustomContextMenu(const QPoint& point) {
-    QModelIndex index = ui->treeView->indexAt(point);
-    if (index.isValid())
-        contextMenu.exec(ui->treeView->mapToGlobal(point));
+    const bool valid = ui->treeView->indexAt(point).isValid();
+    for(auto a : contextMenu.actions())
+        a->setEnabled(valid);
+
+    contextMenu.exec(ui->treeView->mapToGlobal(point));
 }
 
 void MainWindow::spawnFileViewer(const std::wstring& fileName) {
@@ -187,7 +187,7 @@ void MainWindow::spawnFileViewer(const std::wstring& fileName) {
 }
 
 void MainWindow::onViewSelected() {
-    QModelIndex m = ui->treeView->currentIndex();
+    const QModelIndex m = ui->treeView->currentIndex();
     if (m.isValid())
         spawnFileViewer(model()->filePath(m).toStdWString());
 }
@@ -196,7 +196,7 @@ void MainWindow::onExecuteSelected() {
     QDesktopServices::openUrl(QUrl(model()->filePath(ui->treeView->currentIndex())));
 }
 
-void MainWindow::onShowDecrypted() {
+int MainWindow::onShowDecrypted() {
     syncDlg.clear();
     for (const auto& op : fileOperations)
         syncDlg.push_back(op);
@@ -206,8 +206,11 @@ void MainWindow::onShowDecrypted() {
                   (desktopRect.bottom() - desktopRect.top()) / 2 - syncDlg.height() / 2,
                    syncDlg.width(), syncDlg.height());
 
-    if (syncDlg.exec() == QDialog::Rejected)
+    int res = syncDlg.exec();
+    if (res == QDialog::Rejected)
         fileOperations.clear();
+
+    return res;
 }
 
 void MainWindow::onUpOneLevelClick() {
@@ -275,7 +278,6 @@ void MainWindow::processOperation(Operation operation) {
 
         std::vector<std::wstring> unprocessedSrcNames;
         const unsigned int totalCount = processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount);
-        //waitDlg.hide();
 
         bool (MainWindow::*memberFn)(const std::wstring&, const std::wstring&) = nullptr;
         switch (operation) {
@@ -291,7 +293,6 @@ void MainWindow::processOperation(Operation operation) {
         }
 
         waitDlg.init(totalCount);
-        //waitDlg.show();
         unprocessedSrcNames.clear();
         const unsigned int successfullyProcessed = processItems(names, unprocessedSrcNames, L"/", memberFn);
 
@@ -440,7 +441,7 @@ bool MainWindow::doCount(const std::wstring&/* fileName*/, const std::wstring&) 
 bool MainWindow::doRemove(const std::wstring& fileName, const std::wstring&) {
     bool res = true;
     if (options.wipeMethod() == Options::WipeMethod::Regular) {
-        QFile::remove(QString::fromStdWString(fileName));
+        res = QFile::remove(QString::fromStdWString(fileName));
     } else /*if (options.wipeMethod() == Options::WipeMethod::External)*/ {
         const QString execStr = QString(QString::fromStdWString(options.wipeProgram())).arg(QString::fromStdWString(fileName));
         QProcess p;
@@ -449,7 +450,7 @@ bool MainWindow::doRemove(const std::wstring& fileName, const std::wstring&) {
             res = false;
     }
     if (res)
-        removeFromFileOps(fileName, true);
+        removeFromFileOps(fileName, false); // by destination path
 
     return res;
 }
@@ -496,15 +497,10 @@ void MainWindow::onOptionsClick() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-    if (!fileOperations.empty()) {
-        syncDlg.clear();
-        for (const auto& op : fileOperations)
-            syncDlg.push_back(op);
-
-        if (syncDlg.exec() != QDialog::Rejected)
-            event->ignore();
-    }
+    if (!fileOperations.empty() && onShowDecrypted() != QDialog::Rejected)
+        event->ignore();
 }
+
 void MainWindow::onMarkForProcess(const std::wstring& encryptedName) {
     for (auto& op : fileOperations) {
         if (encryptedName == op.sourcePathName)
@@ -514,13 +510,13 @@ void MainWindow::onMarkForProcess(const std::wstring& encryptedName) {
 
 void MainWindow::tryRemovePath(const std::wstring& fName, const std::wstring& relativePath) {
     // Check if relative path is empty and delete path
-    //QString relativePath = QString::fromStdWString(relativePaths[i]);
     QFileInfo fi(QString::fromStdWString(fName));
     QString absPath = fi.absolutePath();
     absPath = absPath.left(absPath.size() - relativePath.size());
     QStringList sl = QString::fromStdWString(relativePath).split("/", QString::SkipEmptyParts);
-    for (int x = 0; x < sl.size(); ++x) {
-        QString nPath = absPath + "/" + sl[x];
+    const int partsCount = sl.size();
+    for (int x = 0; x < partsCount; ++x) {
+        const QString nPath = absPath + "/" + sl[x];
 
         std::vector<std::wstring> names, unprocessedSrcNames;
         names.push_back(nPath.toStdWString());
@@ -532,63 +528,72 @@ void MainWindow::tryRemovePath(const std::wstring& fName, const std::wstring& re
 }
 
 void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocessedSrcNames) {
-    waitDlg.init(0);
-    waitDlg.show();
+    try {
+        waitDlg.init(0);
+        waitDlg.show();
 
-    // Sort fileOperations by relative path (desc) to correctly delete tree
-    std::sort(fileOperations.begin(), fileOperations.end(),
-              [](const FileOperation& l, const FileOperation& r) {
-                    return r.relativePath < l.relativePath;
-    });
+        // Sort fileOperations by relative path (desc) to correctly delete tree
+        std::sort(fileOperations.begin(), fileOperations.end(), [](const FileOperation& l, const FileOperation& r) {
+            return r.relativePath < l.relativePath;
+        });
 
-    std::vector<std::wstring> names;
-    std::vector<std::wstring> namesToReplace;
-    std::vector<std::wstring> relativePaths;
-    for (const auto& op : fileOperations) {
-        if (op.processItem) {
-            names.emplace_back(op.destinationPathName);
-            namesToReplace.emplace_back(op.sourcePathName);
-            relativePaths.emplace_back(op.relativePath);
+        std::vector<std::wstring> names;
+        std::vector<std::wstring> namesToReplace;
+        std::vector<std::wstring> relativePaths;
+        for (const auto& op : fileOperations) {
+            if (op.processItem) {
+                names.emplace_back(op.destinationPathName);
+                namesToReplace.emplace_back(op.sourcePathName);
+                relativePaths.emplace_back(op.relativePath);
+            }
         }
-    }
-    //std::vector<std::string> unprocessedSrcNames;
-    waitDlg.init(names.size());
-    unprocessedSrcNames.clear();
-    /*int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doEncrypt);
+        //std::vector<std::string> unprocessedSrcNames;
+        waitDlg.init(names.size());
+        unprocessedSrcNames.clear();
+        /*int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doEncrypt);
 
 
-    // delete and rename processed files. If this operation fails, put file in unprocessed vector
-    std::size_t filesLeft = names.size();
-    for (std::size_t i = 0; i < names.size(); ++i) {
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), namesToReplace[i]) == unprocessedSrcNames.end()) {
-            // file was successfully encrypted, now it's time to restore its path if necessary
-            if (names[i] == namesToReplace[i]) {
-                --filesLeft;
-            } else {
-                const QString curName = QString::fromStdWString(names[i]);
-                const QString curNameToReplace = QString::fromStdWString(namesToReplace[i]);
-                QFile d(curNameToReplace);
-                if (d.remove() && QFile::rename(curName, curNameToReplace)) {
+        // delete and rename processed files. If this operation fails, put file in unprocessed vector
+        std::size_t filesLeft = names.size();
+        for (std::size_t i = 0; i < names.size(); ++i) {
+            if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), namesToReplace[i]) == unprocessedSrcNames.end()) {
+                // file was successfully encrypted, now it's time to restore its path if necessary
+                if (names[i] == namesToReplace[i]) {
                     --filesLeft;
-                    //remove path for file that was just deleted
-                    tryRemovePath(names[i], relativePaths[i]);
                 } else {
-                    // Removing or renaming failed
-                    unprocessedSrcNames.push_back(namesToReplace[i]);
+                    const QString curName = QString::fromStdWString(names[i]);
+                    const QString curNameToReplace = QString::fromStdWString(namesToReplace[i]);
+                    QFile d(curNameToReplace);
+                    if (d.remove() && QFile::rename(curName, curNameToReplace)) {
+                        --filesLeft;
+                        //remove path for file that was just deleted
+                        tryRemovePath(names[i], relativePaths[i]);
+                    } else {
+                        // Removing or renaming failed
+                        unprocessedSrcNames.push_back(namesToReplace[i]);
+                    }
                 }
             }
         }
+
+        // removing encrypted files from filesOperations list
+        for (const auto& n : namesToReplace) {
+            if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
+                removeFromFileOps(n, true);
+        }
+
+        waitDlg.hide();
+        showResultMsg(unprocessedSrcNames);
+    } catch (std::exception& e) {
+        if (waitDlg.isVisible())
+            waitDlg.hide();
+        QMessageBox m;
+        m.setText("Error: " + QString(e.what()));
+        m.setIcon(QMessageBox::Critical);
+        m.setWindowTitle("Operation finished");
+        m.setStandardButtons(QMessageBox::StandardButton::Ok);
+        m.exec();
     }
-
-    // removing encrypted files from filesOperations list
-    for (const auto& n : namesToReplace) {
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), n) == unprocessedSrcNames.end())
-            removeFromFileOps(n, true);
-    }
-
-    waitDlg.hide();
-
-    showResultMsg(unprocessedSrcNames);
 }
 
 void MainWindow::removeFromFileOps(const std::wstring& name, bool bySourcePath) {
@@ -620,39 +625,49 @@ void MainWindow::onDiscardAllFiles() {
 }
 
 void MainWindow::onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrcNames) {
-    waitDlg.init(0);
-    waitDlg.show();
+    try {
+        waitDlg.init(0);
+        waitDlg.show();
 
-    // Sort fileOperations by relative path (desc) to correctly delete tree
-    std::sort(fileOperations.begin(), fileOperations.end(),
-              [](const FileOperation& l, const FileOperation& r) {
-                    return r.relativePath < l.relativePath;
-    });
+        // Sort fileOperations by relative path (desc) to correctly delete tree
+        std::sort(fileOperations.begin(), fileOperations.end(), [](const FileOperation& l, const FileOperation& r) {
+            return r.relativePath < l.relativePath;
+        });
 
-    std::vector<std::wstring> names;
-    std::vector<std::wstring> relativePaths;
-    for (const auto& op : fileOperations) {
-        if (op.processItem) {
-            names.emplace_back(op.destinationPathName);
-            relativePaths.emplace_back(op.relativePath);
+        std::vector<std::wstring> names;
+        std::vector<std::wstring> relativePaths;
+        for (const auto& op : fileOperations) {
+            if (op.processItem) {
+                names.emplace_back(op.destinationPathName);
+                relativePaths.emplace_back(op.relativePath);
+            }
         }
-    }
-    //std::vector<std::string> unprocessedSrcNames;
-    waitDlg.init(names.size());
-    unprocessedSrcNames.clear();
-    /*const int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doRemove);
+        //std::vector<std::string> unprocessedSrcNames;
+        waitDlg.init(names.size());
+        unprocessedSrcNames.clear();
+        /*const int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doRemove);
 
-    // removing encrypted files from filesOperations list
-    for (std::size_t i = 0; i < names.size(); ++i) {
-        const std::wstring name = names[i];
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), name) == unprocessedSrcNames.end()) {
-            removeFromFileOps(name, false);
-            //remove path for file that was just deleted
-            tryRemovePath(name, relativePaths[i]);
+        // removing encrypted files from filesOperations list
+        for (std::size_t i = 0; i < names.size(); ++i) {
+            const std::wstring name = names[i];
+            if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), name) == unprocessedSrcNames.end()) {
+                //removeFromFileOps(name, false); - should be removed during onRemove
+                //remove path for file that was just deleted
+                tryRemovePath(name, relativePaths[i]);
+            }
         }
+        waitDlg.hide();
+        showResultMsg(unprocessedSrcNames);
+    } catch (std::exception& e) {
+        if (waitDlg.isVisible())
+            waitDlg.hide();
+        QMessageBox m;
+        m.setText("Error: " + QString(e.what()));
+        m.setIcon(QMessageBox::Critical);
+        m.setWindowTitle("Operation finished");
+        m.setStandardButtons(QMessageBox::StandardButton::Ok);
+        m.exec();
     }
-    waitDlg.hide();
-    showResultMsg(unprocessedSrcNames);
 }
 
 void MainWindow::onShowAbout() {
