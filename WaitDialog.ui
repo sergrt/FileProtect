@@ -39,7 +39,7 @@
       <number>6</number>
      </property>
      <property name="format">
-      <string>%v file(s) processed</string>
+      <string>%v of %m file(s) processed</string>
      </property>
     </widget>
    </item>

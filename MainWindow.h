@@ -73,6 +73,8 @@ private:
     // bySourcePath == true -> name = sourceFileName
     // bySourcePath == false -> name = destinationFileName
     void removeFromFileOps(const std::wstring& name, bool bySourcePath);
+    // Try to remove relative path for file fName
+    void tryRemovePath(const std::wstring& fName, const std::wstring& relativePath);
     void closeEvent(QCloseEvent* event);
 
     void spawnFileViewer(const std::wstring& fileName);

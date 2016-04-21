@@ -7,7 +7,7 @@
 QT       += core gui
 QMAKE_CXXFLAGS += -std=c++11
 
-VERSION = 0.8.7
+VERSION = 0.8.9
 DEFINES += VERSION=\\\"$$VERSION\\\"
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets

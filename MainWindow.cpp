@@ -250,16 +250,27 @@ void MainWindow::onRootPathChanged(const QString &newPath) {
 
 void MainWindow::processOperation(Operation operation) {
     try {
+        std::vector<std::wstring> names;
+
+        // Check for unique elements - user should not be able to
+        // operate on folder and any of it's subfolders simultaneously
+        QModelIndexList list = ui->treeView->selectionModel()->selectedRows();
+        std::sort(list.begin(), list.end());
+        foreach(QModelIndex index, list) {
+            names.emplace_back(model()->filePath(index).toStdWString());
+
+            // There should be no very big performance hit, as user unlikely to select manually many items
+            if (std::find(names.begin(), names.end(), model()->filePath(index.parent()).toStdWString()) != names.end())
+                throw std::logic_error("Parent item selected simultaneously with child or children. Aborting.");
+        }
+        if (names.size() == 0)
+            throw std::logic_error("Nothing selected");
+
         if (operation != Operation::Wipe && !updateKeys())
             throw std::logic_error("Unable to obtain key");
 
         waitDlg.init(0);
         waitDlg.show();
-        std::vector<std::wstring> names;
-
-        QModelIndexList list = ui->treeView->selectionModel()->selectedRows();
-        foreach(QModelIndex index, list)
-            names.emplace_back(model()->filePath(index).toStdWString());
 
         std::vector<std::wstring> unprocessedSrcNames;
         const unsigned int totalCount = processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount);
@@ -500,24 +511,34 @@ void MainWindow::onMarkForProcess(const std::wstring& encryptedName) {
     }
 }
 
-QString getTopLevelRelPath(const std::wstring& fName, const std::wstring& relativePath) {
+void MainWindow::tryRemovePath(const std::wstring& fName, const std::wstring& relativePath) {
     // Check if relative path is empty and delete path
-    QFileInfo f(QString::fromStdWString(fName));
-    QString topLevelRelPath = f.absolutePath();
-    topLevelRelPath = topLevelRelPath.left(topLevelRelPath.size() - relativePath.size());
+    //QString relativePath = QString::fromStdWString(relativePaths[i]);
+    QFileInfo fi(QString::fromStdWString(fName));
+    QString absPath = fi.absolutePath();
+    absPath = absPath.left(absPath.size() - relativePath.size());
+    QStringList sl = QString::fromStdWString(relativePath).split("/", QString::SkipEmptyParts);
+    for (int x = 0; x < sl.size(); ++x) {
+        QString nPath = absPath + "/" + sl[x];
 
-    const std::size_t delimPos = relativePath.find(L'/', 1);
-    if (delimPos != std::wstring::npos)
-        topLevelRelPath += QString::fromStdWString(relativePath.substr(0, delimPos));
-    else if (relativePath.size() != 1)
-        topLevelRelPath += QString::fromStdWString(relativePath);
-
-    return topLevelRelPath;
+        std::vector<std::wstring> names, unprocessedSrcNames;
+        names.push_back(nPath.toStdWString());
+        if (processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount) == 0) {
+            QDir d(nPath);
+            d.removeRecursively();
+        }
+    }
 }
 
 void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocessedSrcNames) {
     waitDlg.init(0);
     waitDlg.show();
+
+    // Sort fileOperations by relative path (desc) to correctly delete tree
+    std::sort(fileOperations.begin(), fileOperations.end(),
+              [](const FileOperation& l, const FileOperation& r) {
+                    return r.relativePath < l.relativePath;
+    });
 
     std::vector<std::wstring> names;
     std::vector<std::wstring> namesToReplace;
@@ -535,23 +556,6 @@ void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocess
     /*int processedCount = */processItems(names, unprocessedSrcNames, L"/", &MainWindow::doEncrypt);
 
 
-
-    /*
-    std::size_t filesLeft = names.size();
-    for (std::size_t i = 0; i < names.size(); ++i) {
-        if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), namesToReplace[i]) == unprocessedSrcNames.end()) {
-            // file was successfully encrypted, now it's time to restore its path if necessary
-            if (names[i] == namesToReplace[i]) {
-                --filesLeft;
-            } else {
-                QFile f(names[i].c_str());
-                QFile d(namesToReplace[i].c_str());
-                if (d.remove() && QFile::rename(names[i].c_str(), namesToReplace[i].c_str()))
-                    --filesLeft;
-            }
-        }
-    }
-    */
     // delete and rename processed files. If this operation fails, put file in unprocessed vector
     std::size_t filesLeft = names.size();
     for (std::size_t i = 0; i < names.size(); ++i) {
@@ -565,16 +569,8 @@ void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocess
                 QFile d(curNameToReplace);
                 if (d.remove() && QFile::rename(curName, curNameToReplace)) {
                     --filesLeft;
-
-                    const QString topLevelRelPath = getTopLevelRelPath(curName.toStdWString(), relativePaths[i]);
-                    if (topLevelRelPath.size() != 0) {
-                        std::vector<std::wstring> names, unprocessedSrcNames;
-                        names.push_back(topLevelRelPath.toStdWString());
-                        if (processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount) == 0) {
-                            QDir d(topLevelRelPath);
-                            d.removeRecursively();
-                        }
-                    }
+                    //remove path for file that was just deleted
+                    tryRemovePath(names[i], relativePaths[i]);
                 } else {
                     // Removing or renaming failed
                     unprocessedSrcNames.push_back(namesToReplace[i]);
@@ -625,6 +621,13 @@ void MainWindow::onDiscardAllFiles() {
 void MainWindow::onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrcNames) {
     waitDlg.init(0);
     waitDlg.show();
+
+    // Sort fileOperations by relative path (desc) to correctly delete tree
+    std::sort(fileOperations.begin(), fileOperations.end(),
+              [](const FileOperation& l, const FileOperation& r) {
+                    return r.relativePath < l.relativePath;
+    });
+
     std::vector<std::wstring> names;
     std::vector<std::wstring> relativePaths;
     for (const auto& op : fileOperations) {
@@ -643,26 +646,8 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrc
         const std::wstring name = names[i];
         if (std::find(unprocessedSrcNames.begin(), unprocessedSrcNames.end(), name) == unprocessedSrcNames.end()) {
             removeFromFileOps(name, false);
-            // Remove dirs if necessary
-
-            const QString topLevelRelPath = getTopLevelRelPath(name, relativePaths[i]);
-            if (topLevelRelPath.size() != 0) {
-                std::vector<std::wstring> names, unprocessedSrcNames;
-                names.push_back(topLevelRelPath.toStdWString());
-                if (processItems(names, unprocessedSrcNames, L"/", &MainWindow::doCount) == 0) {
-                    QDir d(topLevelRelPath);
-                    d.removeRecursively();
-                }
-            }
-
-            // remove dir
-            /*
-            QFileInfo fi(n.c_str());
-            if (fi.exists() && fi.isDir()) {
-                QDir d(n.c_str());
-                d.removeRecursively();
-            }
-            */
+            //remove path for file that was just deleted
+            tryRemovePath(name, relativePaths[i]);
         }
     }
     waitDlg.hide();

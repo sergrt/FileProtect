@@ -186,7 +186,9 @@ int FilesSyncDialog::updateFileOperations() {
 void FilesSyncDialog::onEncryptSelClick() {
     if (updateFileOperations() > 0) {
         std::vector<std::wstring> unprocessedSrcNames;
+        ui->tableWidget->setUpdatesEnabled(false);
         emit restoreEncryptedSelected(unprocessedSrcNames);
+        ui->tableWidget->setUpdatesEnabled(true);
     } else {
         showNoFilesSelectedMsg();
     }
@@ -195,7 +197,9 @@ void FilesSyncDialog::onEncryptSelClick() {
 void FilesSyncDialog::onWipeSelClick() {
     if (updateFileOperations() > 0) {
         std::vector<std::wstring> unprocessedSrcNames;
+        ui->tableWidget->setUpdatesEnabled(false);
         emit wipeSelected(unprocessedSrcNames);
+        ui->tableWidget->setUpdatesEnabled(true);
     } else {
         showNoFilesSelectedMsg();
     }
