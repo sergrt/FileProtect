@@ -29,15 +29,19 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(model, &QFileSystemModel::rootPathChanged, this, &MainWindow::onRootPathChanged);
 
     //model->setFilter(QDir::AllEntries);
+
+    // Main actions
     connect(ui->actionUp_one_level, &QAction::triggered, this, &MainWindow::onUpOneLevelClick);
     connect(ui->actionSet_as_root, &QAction::triggered, this, &MainWindow::onSetAsRoot);
     connect(ui->actionEncrypt_selected, &QAction::triggered, this, &MainWindow::onEncryptSelected);
     connect(ui->actionDecrypt_selected, &QAction::triggered, this, &MainWindow::onDecryptSelected);
     connect(ui->actionWipe_selected, &QAction::triggered, this, &MainWindow::onWipeSelected);
     connect(ui->actionOptions, &QAction::triggered, this, &MainWindow::onOptionsClick);
+    connect(ui->actionShow_decrypted, &QAction::triggered, this, &MainWindow::onShowDecrypted);
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onShowAbout);
 
-    optionsDlg.hide();
 
+    // Tree initialization
     const std::wstring rootPath = options.rootPath();
     model->setRootPath(rootPath.size() > 0 ? QString::fromStdWString(rootPath) : QDir::currentPath());
 
@@ -45,24 +49,24 @@ MainWindow::MainWindow(QWidget* parent) :
     ui->treeView->setRootIndex(model->index(model->rootPath()));
     ui->treeView->setColumnWidth(0, 200);
 
-
+    // Context menu
     ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->treeView, &QTreeView::customContextMenuRequested, this, &MainWindow::onCustomContextMenu);
 
+    contextMenu.addAction(ui->actionSet_as_root);
+    contextMenu.addSeparator();
     contextMenu.addAction(ui->actionEncrypt_selected);
     contextMenu.addAction(ui->actionDecrypt_selected);
     contextMenu.addAction(ui->actionWipe_selected);
 
-    waitDlg.hide();
-
-    connect(ui->actionShow_decrypted, &QAction::triggered, this, &MainWindow::onShowDecrypted);
-
-
+    // FileSyncDialog connections - operations upon files, that were decrypted and not encrypted back
     connect(&syncDlg, &FilesSyncDialog::setMarkForProcess, this, &MainWindow::onMarkForProcess);
     connect(&syncDlg, &FilesSyncDialog::restoreEncryptedSelected, this, &MainWindow::onFilesOpEncryptedSelected);
     connect(&syncDlg, &FilesSyncDialog::wipeSelected, this, &MainWindow::onFilesOpWipeSelected);
     connect(&syncDlg, &FilesSyncDialog::discardAllFiles, this, &MainWindow::onDiscardAllFiles);
 
+    // Hotkeys and operation buttons connections
+    //
     // These shortcuts will be deleted automatically on app exit
     new QShortcut(QKeySequence(Qt::Key_F1), this, SLOT(onShowAbout()));
     new QShortcut(QKeySequence(Qt::Key_F2), this, SLOT(onSetAsRoot()));
@@ -84,9 +88,6 @@ MainWindow::MainWindow(QWidget* parent) :
     connect(ui->bnF8Wipe,          &QPushButton::clicked, this, &MainWindow::onWipeSelected);
     connect(ui->bnF9Options,       &QPushButton::clicked, this, &MainWindow::onOptionsClick);
     connect(ui->bnCtrlPgUpGoUp,    &QPushButton::clicked, this, &MainWindow::onUpOneLevelClick);
-
-    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onShowAbout);
-
 }
 
 MainWindow::~MainWindow() {
