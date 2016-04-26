@@ -6,6 +6,7 @@
 struct FileOperation {
 //public:
     FileOperation(const std::wstring& src, const std::wstring& dst, unsigned long sz, const time_t& t, const std::wstring& rel);
+    FileOperation(const FileOperation& op);
     ~FileOperation();
     FileOperation(FileOperation&& op);
     FileOperation& operator=(const FileOperation& op);

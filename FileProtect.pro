@@ -50,9 +50,11 @@ FORMS    += MainWindow.ui \
 
 unix: LIBS += -L$$PWD/../cryptopp/ -lcryptopp
 win32:debug: LIBS += -L$$PWD/../cryptopp/Win32/Output/Debug -lcryptlib
-win32:release: LIBS += -L$$PWD/../cryptopp/Win32/Output/Release -lcryptlib
+#win32:release: LIBS += -L$$PWD/../cryptopp/Win32/Output/Release -lcryptlib
+win32:release: LIBS += -L$$PWD/../cryptopp/x64/Output/Release -lcryptlib
 
 #INCLUDEPATH += $$PWD/../cryptopp
 #DEPENDPATH += $$PWD/../cryptopp
 
 #unix:!macx: PRE_TARGETDEPS += $$PWD/../cryptopp/libcryptopp.a
+win32: RC_ICONS = MainIcon.ico

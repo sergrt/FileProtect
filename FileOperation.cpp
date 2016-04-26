@@ -5,6 +5,15 @@ FileOperation::FileOperation(const std::wstring& src, const std::wstring& dst, u
     : sourcePathName(src), destinationPathName(dst), initialFileSize(sz), initialModificationTime(t), relativePath(rel) {
 }
 
+FileOperation::FileOperation(const FileOperation& op) {
+    this->sourcePathName = op.sourcePathName;
+    this->destinationPathName = op.destinationPathName;
+    this->initialFileSize = op.initialFileSize;
+    this->initialModificationTime = op.initialModificationTime;
+    this->processItem = op.processItem;
+    this->relativePath = op.relativePath;
+}
+
 FileOperation::FileOperation(FileOperation&& op) {
     std::swap(sourcePathName, op.sourcePathName);
     std::swap(destinationPathName, op.destinationPathName);
