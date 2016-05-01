@@ -18,6 +18,7 @@
 #include "../cryptopp/sha.h"
 #include <random>
 #include "AboutDialog.h"
+#include <cctype>
 
 const int dirFilter = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
@@ -404,7 +405,10 @@ bool MainWindow::doDecrypt(const std::wstring& infile, const std::wstring& relat
             if (!tmpDir.exists() && !tmpDir.mkpath(QString::fromStdWString(fullFileDir)))
                 throw std::runtime_error("Unable to create relative dir");
             // It is safe to use "/" here - Qt will translate it to correct path symbol
-            outfile = fullFileDir + L"/" + filename.toStdWString();
+            outfile = fullFileDir;
+            if (outfile.size() > 0 && outfile[outfile.size() - 1] != L'/')
+                outfile += std::wstring(L"/");
+            outfile += filename.toStdWString();
         } else {
             outfile += L"~dec";
         }
@@ -596,6 +600,15 @@ void MainWindow::onFilesOpEncryptedSelected(std::vector<std::wstring>& unprocess
     }
 }
 
+bool pathCompare(std::wstring a, std::wstring b) {
+    // Windows filenames not case sensitive
+#ifdef WIN32
+    std::transform(a.begin(), a.end(), a.begin(), std::tolower);
+    std::transform(b.begin(), b.end(), b.begin(), std::tolower);
+#endif
+    return a == b;
+}
+
 void MainWindow::removeFromFileOps(const std::wstring& name, bool bySourcePath) {
     /*
     std::remove_if(fileOperations.begin(), fileOperations.end(), [=](const FileOperation& op) {
@@ -610,7 +623,7 @@ void MainWindow::removeFromFileOps(const std::wstring& name, bool bySourcePath) 
 
     for (std::size_t i = 0; i < fileOperations.size(); ++i) {
         const std::wstring opFileName = bySourcePath ? fileOperations[i].sourcePathName : fileOperations[i].destinationPathName;
-        if (opFileName == name) {
+        if (pathCompare(opFileName, name)) {
             FileOperation tmp(std::move(fileOperations[i]));
             fileOperations.erase(fileOperations.begin() + i);
             syncDlg.remove(tmp);
@@ -656,6 +669,7 @@ void MainWindow::onFilesOpWipeSelected(std::vector<std::wstring>& unprocessedSrc
                 tryRemovePath(name, relativePaths[i]);
             }
         }
+
         waitDlg.hide();
         showResultMsg(unprocessedSrcNames);
     } catch (std::exception& e) {
